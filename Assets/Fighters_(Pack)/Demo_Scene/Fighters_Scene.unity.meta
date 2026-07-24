@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: b968789a03621ee4cad34aceacb5c656
+timeCreated: 1557560293
+licenseType: Store
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 145995
+  packageName: PBR Fighters (Pack)
+  packageVersion: 1.0
+  assetPath: Assets/Fighters_(Pack)/Demo_Scene/Fighters_Scene.unity
+  uploadId: 310257

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e9b772311cc104545912fd53e6c51c8b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 229379
+  packageName: Ancient altar I
+  packageVersion: 1.0
+  assetPath: Assets/AncientAltar/Materials/Ground.mat
+  uploadId: 949230

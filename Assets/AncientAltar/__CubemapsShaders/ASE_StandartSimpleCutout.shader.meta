@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 045d1f63e0d0b86489496ffdee2390f1
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 229379
+  packageName: Ancient altar I
+  packageVersion: 1.0
+  assetPath: Assets/AncientAltar/__CubemapsShaders/ASE_StandartSimpleCutout.shader
+  uploadId: 949230

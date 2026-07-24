@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 81a2c3c21a02f8f4a9b9d6797aa9d30f
+timeCreated: 1557562150
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 145995
+  packageName: PBR Fighters (Pack)
+  packageVersion: 1.0
+  assetPath: Assets/Fighters_(Pack)/Materials/Fighter_08.mat
+  uploadId: 310257

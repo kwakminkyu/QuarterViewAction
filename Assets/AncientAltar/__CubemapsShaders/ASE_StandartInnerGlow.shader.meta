@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 64e22165f15883d4c9bf56b78c0ebabd
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 229379
+  packageName: Ancient altar I
+  packageVersion: 1.0
+  assetPath: Assets/AncientAltar/__CubemapsShaders/ASE_StandartInnerGlow.shader
+  uploadId: 949230

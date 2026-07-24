@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: ffcaaf002264ffb4eab7126b569ead34
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 229379
+  packageName: Ancient altar I
+  packageVersion: 1.0
+  assetPath: Assets/AncientAltar/__CubemapsShaders/ASE_StandartSSS2.shader
+  uploadId: 949230

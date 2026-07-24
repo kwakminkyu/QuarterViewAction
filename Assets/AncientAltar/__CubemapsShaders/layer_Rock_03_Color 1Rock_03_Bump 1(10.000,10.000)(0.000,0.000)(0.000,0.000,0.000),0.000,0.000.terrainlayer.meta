@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: d7523876c2fdb5f4ca99dc2965314372
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 8574412962073106934
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 229379
+  packageName: Ancient altar I
+  packageVersion: 1.0
+  assetPath: Assets/AncientAltar/__CubemapsShaders/layer_Rock_03_Color 1Rock_03_Bump
+    1(10.000,10.000)(0.000,0.000)(0.000,0.000,0.000),0.000,0.000.terrainlayer
+  uploadId: 949230

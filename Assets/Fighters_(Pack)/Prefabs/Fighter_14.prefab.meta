@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: a5819ff97636f104eb727d60937919e6
+timeCreated: 1557562171
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 145995
+  packageName: PBR Fighters (Pack)
+  packageVersion: 1.0
+  assetPath: Assets/Fighters_(Pack)/Prefabs/Fighter_14.prefab
+  uploadId: 310257
