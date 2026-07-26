@@ -1,40 +1,42 @@
 using System;
 using UnityEngine;
 
-public sealed class Health : MonoBehaviour, IDamageable
+public sealed class Health : MonoBehaviour
 {
     [SerializeField, Min(1f)] private float maxHealth = 100f;
 
     public float MaxHealth => maxHealth;
     public float CurrentHealth { get; private set; }
-    public bool IsAlive => CurrentHealth > 0f;
+    public bool IsDepleted => CurrentHealth <= 0f;
 
-    public event Action<float> DamageTaken;
+    public event Action<float> HealthDecreased;
     public event Action<float, float> HealthChanged;
-    public event Action Died;
+    public event Action Depleted;
 
     private void Awake()
     {
         CurrentHealth = maxHealth;
     }
 
-    public void TakeDamage(float amount)
+    public float Decrease(float amount)
     {
-        if (!IsAlive || amount <= 0f)
+        if (IsDepleted || amount <= 0f)
         {
-            return;
+            return 0f;
         }
 
         float previousHealth = CurrentHealth;
         CurrentHealth = Mathf.Max(CurrentHealth - amount, 0f);
-        float appliedDamage = previousHealth - CurrentHealth;
+        float decreasedAmount = previousHealth - CurrentHealth;
 
-        DamageTaken?.Invoke(appliedDamage);
+        HealthDecreased?.Invoke(decreasedAmount);
         HealthChanged?.Invoke(CurrentHealth, MaxHealth);
 
-        if (!IsAlive)
+        if (IsDepleted)
         {
-            Died?.Invoke();
+            Depleted?.Invoke();
         }
+
+        return decreasedAmount;
     }
 }
