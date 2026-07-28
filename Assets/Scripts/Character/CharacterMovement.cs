@@ -1,13 +1,16 @@
 using UnityEngine;
 
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(CharacterController), typeof(DamageReceiver))]
 public sealed class CharacterMovement : MonoBehaviour
 {
     [SerializeField, Min(0f)] private float moveSpeed = 5f;
     [SerializeField] private float gravity = -9.81f;
     [SerializeField, Min(0f)] private float groundedVerticalSpeed = 2f;
+    [SerializeField, Min(0.01f)] private float knockbackDeceleration = 20f;
 
     private CharacterController characterController;
+    private DamageReceiver damageReceiver;
+    private Vector3 knockbackVelocity;
     private float verticalVelocity;
 
     public Vector3 MoveDirection { get; private set; }
@@ -16,6 +19,23 @@ public sealed class CharacterMovement : MonoBehaviour
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
+        damageReceiver = GetComponent<DamageReceiver>();
+    }
+
+    private void OnEnable()
+    {
+        if (damageReceiver != null)
+        {
+            damageReceiver.DamageReceived += OnDamageReceived;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (damageReceiver != null)
+        {
+            damageReceiver.DamageReceived -= OnDamageReceived;
+        }
     }
 
     public void Move(Vector2 input)
@@ -38,8 +58,34 @@ public sealed class CharacterMovement : MonoBehaviour
         }
 
         Vector3 velocity = MoveDirection * moveSpeed;
+        velocity += knockbackVelocity;
         velocity.y = verticalVelocity;
 
         characterController.Move(velocity * Time.deltaTime);
+
+        knockbackVelocity = Vector3.MoveTowards(
+            knockbackVelocity,
+            Vector3.zero,
+            knockbackDeceleration * Time.deltaTime);
+    }
+
+    private void OnDamageReceived(DamageInfo info)
+    {
+        if (info.Payload.Knockback <= 0f)
+        {
+            return;
+        }
+
+        Vector3 direction = Vector3.ProjectOnPlane(
+            info.HitDirection,
+            Vector3.up);
+
+        if (direction.sqrMagnitude <= Mathf.Epsilon)
+        {
+            return;
+        }
+
+        knockbackVelocity =
+            direction.normalized * info.Payload.Knockback;
     }
 }
