@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[DefaultExecutionOrder(100)]
 [RequireComponent(typeof(CharacterController), typeof(DamageReceiver))]
 public sealed class CharacterMovement : MonoBehaviour
 {
@@ -11,7 +12,9 @@ public sealed class CharacterMovement : MonoBehaviour
     private CharacterController characterController;
     private DamageReceiver damageReceiver;
     private Vector3 knockbackVelocity;
+    private Vector3 skillVelocity;
     private float verticalVelocity;
+    private bool isSkillControlling;
 
     public Vector3 MoveDirection { get; private set; }
     public bool IsMoving => MoveDirection.sqrMagnitude > 0f;
@@ -36,6 +39,30 @@ public sealed class CharacterMovement : MonoBehaviour
         {
             damageReceiver.DamageReceived -= OnDamageReceived;
         }
+
+        EndSkillControl();
+    }
+
+    private void Update()
+    {
+        UpdateVerticalVelocity();
+
+        Vector3 locomotionVelocity = MoveDirection * moveSpeed;
+        Vector3 planarVelocity = isSkillControlling
+            ? skillVelocity
+            : locomotionVelocity;
+
+        Vector3 velocity = planarVelocity + knockbackVelocity;
+        velocity.y = verticalVelocity;
+
+        characterController.Move(velocity * Time.deltaTime);
+
+        knockbackVelocity = Vector3.MoveTowards(
+            knockbackVelocity,
+            Vector3.zero,
+            knockbackDeceleration * Time.deltaTime);
+
+        skillVelocity = Vector3.zero;
     }
 
     public void Move(Vector2 input)
@@ -47,7 +74,33 @@ public sealed class CharacterMovement : MonoBehaviour
     {
         worldDirection.y = 0f;
         MoveDirection = Vector3.ClampMagnitude(worldDirection, 1f);
+    }
 
+    public void BeginSkillControl()
+    {
+        isSkillControlling = true;
+        skillVelocity = Vector3.zero;
+    }
+
+    public void MoveBySkill(Vector3 velocity)
+    {
+        if (!isSkillControlling)
+        {
+            return;
+        }
+
+        velocity.y = 0f;
+        skillVelocity = velocity;
+    }
+
+    public void EndSkillControl()
+    {
+        isSkillControlling = false;
+        skillVelocity = Vector3.zero;
+    }
+
+    private void UpdateVerticalVelocity()
+    {
         if (characterController.isGrounded && verticalVelocity < 0f)
         {
             verticalVelocity = -groundedVerticalSpeed;
@@ -56,17 +109,6 @@ public sealed class CharacterMovement : MonoBehaviour
         {
             verticalVelocity += gravity * Time.deltaTime;
         }
-
-        Vector3 velocity = MoveDirection * moveSpeed;
-        velocity += knockbackVelocity;
-        velocity.y = verticalVelocity;
-
-        characterController.Move(velocity * Time.deltaTime);
-
-        knockbackVelocity = Vector3.MoveTowards(
-            knockbackVelocity,
-            Vector3.zero,
-            knockbackDeceleration * Time.deltaTime);
     }
 
     private void OnDamageReceived(DamageInfo info)
