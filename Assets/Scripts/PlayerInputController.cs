@@ -1,11 +1,16 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(CharacterMovement), typeof(CharacterAim))]
+[RequireComponent(
+    typeof(CharacterMovement),
+    typeof(CharacterAim),
+    typeof(SkillController))]
 public sealed class PlayerInputController : MonoBehaviour
 {
     private CharacterMovement characterMovement;
     private CharacterAim characterAim;
+    private SkillController skillController;
+    private SkillDebugView skillDebugView;
     private Camera worldCamera;
 
     public Vector2 MoveInput { get; private set; }
@@ -15,6 +20,8 @@ public sealed class PlayerInputController : MonoBehaviour
     {
         characterMovement = GetComponent<CharacterMovement>();
         characterAim = GetComponent<CharacterAim>();
+        skillController = GetComponent<SkillController>();
+        skillDebugView = GetComponent<SkillDebugView>();
         worldCamera = Camera.main;
     }
 
@@ -26,6 +33,23 @@ public sealed class PlayerInputController : MonoBehaviour
     public void OnLook(InputAction.CallbackContext context)
     {
         AimInput = context.ReadValue<Vector2>();
+    }
+
+    public void OnAttack(InputAction.CallbackContext context)
+    {
+        if (!context.performed)
+        {
+            return;
+        }
+
+        bool accepted = skillController.TryUseSkill(
+            0,
+            characterAim.AimDirection);
+
+        skillDebugView?.ReportSkillInput(
+            accepted,
+            skillController.CurrentActionIndex,
+            skillController.CurrentPhase);
     }
 
     private void Update()

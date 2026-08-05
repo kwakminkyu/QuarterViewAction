@@ -16,7 +16,7 @@ public sealed class OverlapAttack
         colliderBuffer = new Collider[initialBufferCapacity];
     }
 
-    public void Execute(
+    public int Execute(
         in AttackContext context,
         OverlapAttackData data,
         Vector3 position,
@@ -34,6 +34,7 @@ public sealed class OverlapAttack
 
         DamageReceiver attackerReceiver = GetAttackerReceiver(
             context.Attacker);
+        int hitCount = 0;
 
         try
         {
@@ -64,13 +65,22 @@ public sealed class OverlapAttack
                     hitPoint,
                     hitDirection);
 
+                float healthBeforeDamage =
+                    receiver.Health.CurrentHealth;
                 receiver.TakeDamage(in damageInfo);
+
+                if (receiver.Health.CurrentHealth < healthBeforeDamage)
+                {
+                    hitCount++;
+                }
             }
         }
         finally
         {
             Array.Clear(colliderBuffer, 0, colliderBuffer.Length);
         }
+
+        return hitCount;
     }
 
     private int FindColliders(
