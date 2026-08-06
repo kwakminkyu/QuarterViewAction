@@ -895,7 +895,9 @@ GameObject:
   - component: {fileID: 1522211917}
   - component: {fileID: 1522211920}
   - component: {fileID: 1522211921}
-  m_Layer: 0
+  - component: {fileID: 1522211923}
+  - component: {fileID: 1522211922}
+  m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1011,14 +1013,62 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
     m_ActionId: 827c1d0c-a1ca-4b3f-a3eb-7c50cdf2354a
     m_ActionName: 'GamePlay/Attack[/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1522211919}
+        m_TargetAssemblyTypeName: PlayerInputController, Assembly-CSharp
+        m_MethodName: OnSpecialAttack
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: c703b8fe-1a37-439b-908d-8dba33124dea
+    m_ActionName: 'GamePlay/SpecialAttack[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1522211919}
+        m_TargetAssemblyTypeName: PlayerInputController, Assembly-CSharp
+        m_MethodName: OnDash
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: bb603e3b-8ce9-447d-96e1-ee80001af2a2
+    m_ActionName: 'GamePlay/Dash[/Keyboard/leftShift]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1522211919}
+        m_TargetAssemblyTypeName: PlayerInputController, Assembly-CSharp
+        m_MethodName: OnUltimate
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 139bb2bf-1aa3-4931-bdcb-0cd1892ba43d
+    m_ActionName: 'GamePlay/Ultimate[/Keyboard/q]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: 8d337140-ae35-4616-82b2-8bb6560cdabc
+  m_DefaultActionMap: GamePlay
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
 --- !u!114 &1522211917
@@ -1036,6 +1086,7 @@ MonoBehaviour:
   moveSpeed: 5
   gravity: -9.81
   groundedVerticalSpeed: 2
+  knockbackDeceleration: 20
 --- !u!114 &1522211918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1071,10 +1122,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4d2a5b87c1e4c8b9a603f2d7e114005, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkillController
   equippedSkills:
   - {fileID: 11400000, guid: 75fac0a7f4794ade8303579310c9e02e, type: 2}
+  - {fileID: 11400000, guid: bd6a02a02d7645d8a4d622469905be17, type: 2}
+  - {fileID: 11400000, guid: 00e72aff122e4c90ae4d364dd81e8d98, type: 2}
+  - {fileID: 11400000, guid: c4675423e3b940f99cbadcdbb452dc44, type: 2}
 --- !u!114 &1522211921
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1085,7 +1139,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3eab05f6316e4355a0e5c822ad0e4511, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkillDebugView
   logSkillInput: 1
   logOverlapHits: 1
@@ -1093,6 +1147,32 @@ MonoBehaviour:
   displayDuration: 0.4
   missColor: {r: 0, g: 1, b: 0, a: 1}
   hitColor: {r: 1, g: 0, b: 0, a: 1}
+--- !u!114 &1522211922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1522211912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e66e58c027caa504d9da0715219ef865, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
+  health: {fileID: 1522211923}
+--- !u!114 &1522211923
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1522211912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 909ab1f28902b8d4badd8caa012e9b68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Health
+  maxHealth: 100
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

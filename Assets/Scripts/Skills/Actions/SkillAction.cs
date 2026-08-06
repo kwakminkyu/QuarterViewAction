@@ -21,4 +21,8 @@ public abstract class SkillAction : ScriptableObject
     public virtual void OnActiveExit(in SkillActionContext context)
     {
     }
+
+    public virtual void OnSkillEnd(in SkillActionContext context)
+    {
+    }
 }

@@ -8,11 +8,14 @@ public sealed class OverlapSkillAction : SkillAction
     [SerializeField] private OverlapAttackData attackData;
     [SerializeField] private Vector3 centerOffset =
         new Vector3(0f, 1f, 1f);
+    [SerializeField] private bool invulnerableUntilSkillEnds;
 
     private OverlapAttack overlapAttack;
 
     public OverlapAttackData AttackData => attackData;
     public Vector3 CenterOffset => centerOffset;
+    public bool InvulnerableUntilSkillEnds =>
+        invulnerableUntilSkillEnds;
 
     public override void OnActiveEnter(
         in SkillActionContext context)
@@ -23,6 +26,11 @@ public sealed class OverlapSkillAction : SkillAction
                 $"{name} has no overlap attack data.",
                 this);
             return;
+        }
+
+        if (invulnerableUntilSkillEnds)
+        {
+            context.DamageReceiver.SetInvulnerable(true);
         }
 
         Vector3 direction = ResolveDirection(in context);
@@ -54,6 +62,15 @@ public sealed class OverlapSkillAction : SkillAction
                 position,
                 rotation,
                 hitCount);
+        }
+    }
+
+    public override void OnSkillEnd(
+        in SkillActionContext context)
+    {
+        if (invulnerableUntilSkillEnds)
+        {
+            context.DamageReceiver.SetInvulnerable(false);
         }
     }
 

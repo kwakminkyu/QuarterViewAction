@@ -7,6 +7,11 @@ using UnityEngine.InputSystem;
     typeof(SkillController))]
 public sealed class PlayerInputController : MonoBehaviour
 {
+    private const int BasicAttackSlot = 0;
+    private const int SpecialAttackSlot = 1;
+    private const int DashSlot = 2;
+    private const int UltimateSlot = 3;
+
     private CharacterMovement characterMovement;
     private CharacterAim characterAim;
     private SkillController skillController;
@@ -37,19 +42,45 @@ public sealed class PlayerInputController : MonoBehaviour
 
     public void OnAttack(InputAction.CallbackContext context)
     {
-        if (!context.performed)
+        TryUseSkill(
+            context,
+            BasicAttackSlot,
+            "Basic attack",
+            characterAim.AimDirection);
+    }
+
+    public void OnSpecialAttack(InputAction.CallbackContext context)
+    {
+        TryUseSkill(
+            context,
+            SpecialAttackSlot,
+            "Special attack",
+            characterAim.AimDirection);
+    }
+
+    public void OnDash(InputAction.CallbackContext context)
+    {
+        Vector3 direction = GetCameraRelativeMoveDirection(MoveInput);
+
+        if (direction.sqrMagnitude <= Mathf.Epsilon)
         {
-            return;
+            direction = characterAim.AimDirection;
         }
 
-        bool accepted = skillController.TryUseSkill(
-            0,
-            characterAim.AimDirection);
+        TryUseSkill(
+            context,
+            DashSlot,
+            "Dash",
+            direction);
+    }
 
-        skillDebugView?.ReportSkillInput(
-            accepted,
-            skillController.CurrentActionIndex,
-            skillController.CurrentPhase);
+    public void OnUltimate(InputAction.CallbackContext context)
+    {
+        TryUseSkill(
+            context,
+            UltimateSlot,
+            "Ultimate",
+            characterAim.AimDirection);
     }
 
     private void Update()
@@ -69,6 +100,29 @@ public sealed class PlayerInputController : MonoBehaviour
             Vector3.up).normalized;
 
         return cameraRight * input.x + cameraForward * input.y;
+    }
+
+    private void TryUseSkill(
+        InputAction.CallbackContext context,
+        int slotIndex,
+        string skillName,
+        Vector3 direction)
+    {
+        if (!context.performed)
+        {
+            return;
+        }
+
+        bool accepted = skillController.TryUseSkill(
+            slotIndex,
+            direction);
+
+        skillDebugView?.ReportSkillInput(
+            skillName,
+            slotIndex,
+            accepted,
+            skillController.CurrentActionIndex,
+            skillController.CurrentPhase);
     }
 
     private void UpdateAim(Vector2 screenPosition)

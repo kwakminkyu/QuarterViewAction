@@ -7,6 +7,12 @@ public sealed class DashSkillAction : SkillAction
 
     public float Distance => Mathf.Max(0f, distance);
 
+    public override void OnActiveEnter(
+        in SkillActionContext context)
+    {
+        context.DamageReceiver.SetInvulnerable(true);
+    }
+
     public override void OnActiveUpdate(
         in SkillActionContext context)
     {
@@ -46,5 +52,11 @@ public sealed class DashSkillAction : SkillAction
 
         context.Movement.MoveBySkill(
             direction.normalized * frameSpeed);
+    }
+
+    public override void OnSkillEnd(
+        in SkillActionContext context)
+    {
+        context.DamageReceiver.SetInvulnerable(false);
     }
 }

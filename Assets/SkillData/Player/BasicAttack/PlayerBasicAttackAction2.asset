@@ -17,3 +17,4 @@ MonoBehaviour:
   recoveryDuration: 0.3
   attackData: {fileID: 11400000, guid: 066f0b50f528419b9f74fd323f2a78eb, type: 2}
   centerOffset: {x: 0, y: 0.9, z: 1}
+  invulnerableUntilSkillEnds: 0

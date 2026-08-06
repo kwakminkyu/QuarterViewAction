@@ -9,7 +9,7 @@ public enum SkillPhase
     Finished
 }
 
-[RequireComponent(typeof(CharacterMovement))]
+[RequireComponent(typeof(CharacterMovement), typeof(DamageReceiver))]
 public sealed class SkillController : MonoBehaviour
 {
     private const int MaxPhaseTransitionsPerUpdate = 16;
@@ -18,6 +18,7 @@ public sealed class SkillController : MonoBehaviour
         Array.Empty<SkillDefinition>();
 
     private CharacterMovement movement;
+    private DamageReceiver damageReceiver;
     private Health health;
     private SkillInstance[] skillInstances =
         Array.Empty<SkillInstance>();
@@ -38,6 +39,7 @@ public sealed class SkillController : MonoBehaviour
     private void Awake()
     {
         movement = GetComponent<CharacterMovement>();
+        damageReceiver = GetComponent<DamageReceiver>();
         health = GetComponent<Health>();
         CreateSkillInstances();
     }
@@ -80,11 +82,21 @@ public sealed class SkillController : MonoBehaviour
 
         if (currentSkill != null)
         {
-            return TryContinueCombo(skill, direction, target);
+            if (TryContinueCombo(skill, direction, target))
+            {
+                return true;
+            }
+
+            if (!CanStartDuringRecovery(skill) ||
+                !CanBeginSkill(skill))
+            {
+                return false;
+            }
+
+            FinishCurrentSkill();
         }
 
-        if (!skill.IsReady ||
-            !TryGetAction(skill.Definition, 0, out _))
+        if (!CanBeginSkill(skill))
         {
             return false;
         }
@@ -292,6 +304,18 @@ public sealed class SkillController : MonoBehaviour
         return true;
     }
 
+    private bool CanStartDuringRecovery(SkillInstance requestedSkill)
+    {
+        return currentPhase == SkillPhase.Recovery &&
+            requestedSkill.Definition.CanStartDuringRecovery;
+    }
+
+    private bool CanBeginSkill(SkillInstance skill)
+    {
+        return skill.IsReady &&
+            TryGetAction(skill.Definition, 0, out _);
+    }
+
     private float ConsumePhaseTime(
         float phaseDuration,
         ref float remainingTime)
@@ -352,6 +376,7 @@ public sealed class SkillController : MonoBehaviour
         return new SkillActionContext(
             gameObject,
             movement,
+            damageReceiver,
             currentSkill.Definition,
             currentActionIndex,
             currentDirection,
@@ -370,13 +395,13 @@ public sealed class SkillController : MonoBehaviour
         }
 
         SkillAction action = null;
-        bool shouldExitAction =
-            currentPhase == SkillPhase.Active &&
-            TryGetAction(
-                finishingSkill.Definition,
-                currentActionIndex,
-                out action);
-        SkillActionContext exitContext = shouldExitAction
+        bool hasAction = TryGetAction(
+            finishingSkill.Definition,
+            currentActionIndex,
+            out action);
+        bool shouldExitActive =
+            hasAction && currentPhase == SkillPhase.Active;
+        SkillActionContext endContext = hasAction
             ? CreateActionContext(0f)
             : default;
 
@@ -385,21 +410,31 @@ public sealed class SkillController : MonoBehaviour
 
         try
         {
-            if (shouldExitAction)
+            if (shouldExitActive)
             {
-                action.OnActiveExit(in exitContext);
+                action.OnActiveExit(in endContext);
             }
         }
         finally
         {
-            movement.EndSkillControl();
-
-            if (finishingSkill.Definition.IsCombo)
+            try
             {
-                finishingSkill.StartCooldown();
+                if (hasAction)
+                {
+                    action.OnSkillEnd(in endContext);
+                }
             }
+            finally
+            {
+                movement.EndSkillControl();
 
-            isFinishingSkill = false;
+                if (finishingSkill.Definition.IsCombo)
+                {
+                    finishingSkill.StartCooldown();
+                }
+
+                isFinishingSkill = false;
+            }
         }
     }
 

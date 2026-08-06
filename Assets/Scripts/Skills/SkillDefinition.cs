@@ -7,11 +7,13 @@ public sealed class SkillDefinition : ScriptableObject
 {
     [SerializeField] private string skillId;
     [SerializeField] private float cooldown;
+    [SerializeField] private bool canStartDuringRecovery;
     [SerializeField] private SkillAction[] actions =
         Array.Empty<SkillAction>();
 
     public string SkillId => skillId;
     public float Cooldown => Mathf.Max(0f, cooldown);
+    public bool CanStartDuringRecovery => canStartDuringRecovery;
     public IReadOnlyList<SkillAction> Actions =>
         actions ?? Array.Empty<SkillAction>();
     public int ActionCount => actions?.Length ?? 0;

@@ -10,13 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4d2a5b87c1e4c8b9a603f2d7e114003, type: 3}
-  m_Name: PlayerBasicAttack
+  m_Name: PlayerDash
   m_EditorClassIdentifier: Assembly-CSharp::SkillDefinition
-  skillId: player.basic_attack
-  cooldown: 0.2
-  canStartDuringRecovery: 0
+  skillId: player.dash
+  cooldown: 0.8
+  canStartDuringRecovery: 1
   actions:
-  - {fileID: 11400000, guid: 9d2b1fdc47a3473cac25ad8401c439dd, type: 2}
-  - {fileID: 11400000, guid: f29de4d051e54b2dad79bb344eac78d5, type: 2}
-  - {fileID: 11400000, guid: b51e46735da047f0bc45a889fd561867, type: 2}
-  - {fileID: 11400000, guid: d275108f21e649bdb866a28ee169a025, type: 2}
+  - {fileID: 11400000, guid: 2d308ef47a8f4e4892f491118e601d99, type: 2}

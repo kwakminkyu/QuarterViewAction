@@ -19,6 +19,8 @@ public sealed class SkillDebugView : MonoBehaviour
     private bool hasHit;
 
     public void ReportSkillInput(
+        string skillName,
+        int slotIndex,
         bool accepted,
         int actionIndex,
         SkillPhase phase)
@@ -29,9 +31,10 @@ public sealed class SkillDebugView : MonoBehaviour
         }
 
         Debug.Log(
-            $"[Skill Test] Basic attack input " +
+            $"[Skill Test] {skillName} input " +
             $"{(accepted ? "accepted" : "rejected")}: " +
-            $"action={actionIndex + 1}, phase={phase}.",
+            $"slot={slotIndex}, action={actionIndex + 1}, " +
+            $"phase={phase}.",
             this);
     }
 

@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c8e08c88064c06a30b760fed38b32a, type: 3}
-  m_Name: PlayerBasicAttackAction3
+  m_Name: PlayerSpecialAttackAction
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
-  startupDuration: 0.16
-  activeDuration: 0.1
-  recoveryDuration: 0.34
-  attackData: {fileID: 11400000, guid: 6e6b06914b294ff49cb593cd8954f648, type: 2}
-  centerOffset: {x: 0, y: 0.9, z: 1.05}
+  startupDuration: 0.4
+  activeDuration: 0.12
+  recoveryDuration: 0.6
+  attackData: {fileID: 11400000, guid: c444950fe129432ea3332f210ccc07f9, type: 2}
+  centerOffset: {x: 0, y: 1, z: 1.35}
   invulnerableUntilSkillEnds: 0
