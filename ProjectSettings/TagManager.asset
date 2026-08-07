@@ -15,10 +15,10 @@ TagManager:
   - Enemy
   - 
   - 
-  - 
-  - 
-  - 
-  - 
+  - Floor
+  - Wall
+  - Prop
+  - Destructible
   - 
   - 
   - 

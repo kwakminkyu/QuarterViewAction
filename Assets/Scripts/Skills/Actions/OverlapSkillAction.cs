@@ -1,21 +1,12 @@
 using UnityEngine;
 
-[CreateAssetMenu(
-    fileName = "OverlapSkillAction",
-    menuName = "Skills/Actions/Overlap")]
+[CreateAssetMenu(fileName = "OverlapSkillAction", menuName = "Skills/Actions/Overlap")]
 public sealed class OverlapSkillAction : SkillAction
 {
-    [SerializeField] private OverlapAttackData attackData;
-    [SerializeField] private Vector3 centerOffset =
+    public OverlapAttackData attackData;
+    public Vector3 centerOffset =
         new Vector3(0f, 1f, 1f);
-    [SerializeField] private bool invulnerableUntilSkillEnds;
-
-    private OverlapAttack overlapAttack;
-
-    public OverlapAttackData AttackData => attackData;
-    public Vector3 CenterOffset => centerOffset;
-    public bool InvulnerableUntilSkillEnds =>
-        invulnerableUntilSkillEnds;
+    public bool invulnerableUntilSkillEnds;
 
     public override void OnActiveEnter(
         in SkillActionContext context)
@@ -43,10 +34,9 @@ public sealed class OverlapSkillAction : SkillAction
         var attackContext = new AttackContext(
             context.User,
             attackData,
-            attackData.Payload);
+            attackData.payload);
 
-        overlapAttack ??= new OverlapAttack();
-        int hitCount = overlapAttack.Execute(
+        int hitCount = context.OverlapAttack.Execute(
             in attackContext,
             attackData,
             position,

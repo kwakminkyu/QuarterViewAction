@@ -1,11 +1,9 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "DashSkillAction",menuName = "Skills/Actions/Dash")]
+[CreateAssetMenu(fileName = "DashSkillAction", menuName = "Skills/Actions/Dash")]
 public sealed class DashSkillAction : SkillAction
 {
-    [SerializeField, Min(0f)] private float distance = 5f;
-
-    public float Distance => Mathf.Max(0f, distance);
+    [Min(0f)] public float distance = 5f;
 
     public override void OnActiveEnter(
         in SkillActionContext context)
@@ -38,8 +36,8 @@ public sealed class DashSkillAction : SkillAction
             return;
         }
 
-        if (ActiveDuration <= Mathf.Epsilon ||
-            Distance <= Mathf.Epsilon ||
+        if (activeDuration <= Mathf.Epsilon ||
+            distance <= Mathf.Epsilon ||
             context.DeltaTime <= Mathf.Epsilon ||
             Time.deltaTime <= Mathf.Epsilon)
         {
@@ -47,7 +45,7 @@ public sealed class DashSkillAction : SkillAction
         }
 
         float activeDistance =
-            Distance * context.DeltaTime / ActiveDuration;
+            distance * context.DeltaTime / activeDuration;
         float frameSpeed = activeDistance / Time.deltaTime;
 
         context.Movement.MoveBySkill(

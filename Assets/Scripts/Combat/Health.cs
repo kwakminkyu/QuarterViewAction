@@ -3,9 +3,8 @@ using UnityEngine;
 
 public sealed class Health : MonoBehaviour
 {
-    [SerializeField, Min(1f)] private float maxHealth = 100f;
+    [Min(1f)] public float maxHealth = 100f;
 
-    public float MaxHealth => maxHealth;
     public float CurrentHealth { get; private set; }
     public bool IsDepleted => CurrentHealth <= 0f;
 
@@ -30,7 +29,7 @@ public sealed class Health : MonoBehaviour
         float decreasedAmount = previousHealth - CurrentHealth;
 
         HealthDecreased?.Invoke(decreasedAmount);
-        HealthChanged?.Invoke(CurrentHealth, MaxHealth);
+        HealthChanged?.Invoke(CurrentHealth, maxHealth);
 
         if (IsDepleted)
         {

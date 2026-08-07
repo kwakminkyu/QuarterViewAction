@@ -28,6 +28,6 @@ public sealed class SkillInstance
 
     public void StartCooldown()
     {
-        RemainingCooldown = Definition.Cooldown;
+        RemainingCooldown = Definition.cooldown;
     }
 }

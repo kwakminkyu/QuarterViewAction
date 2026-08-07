@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[DefaultExecutionOrder(100)]
 [RequireComponent(typeof(CharacterController), typeof(DamageReceiver))]
 public sealed class CharacterMovement : MonoBehaviour
 {
@@ -113,7 +112,7 @@ public sealed class CharacterMovement : MonoBehaviour
 
     private void OnDamageReceived(DamageInfo info)
     {
-        if (info.Payload.Knockback <= 0f)
+        if (info.Payload.knockback <= 0f)
         {
             return;
         }
@@ -128,6 +127,6 @@ public sealed class CharacterMovement : MonoBehaviour
         }
 
         knockbackVelocity =
-            direction.normalized * info.Payload.Knockback;
+            direction.normalized * info.Payload.knockback;
     }
 }

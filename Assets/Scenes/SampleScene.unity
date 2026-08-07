@@ -471,7 +471,9 @@ GameObject:
   - component: {fileID: 427776915}
   - component: {fileID: 427776914}
   - component: {fileID: 427776913}
-  m_Layer: 0
+  - component: {fileID: 427776918}
+  - component: {fileID: 427776917}
+  m_Layer: 7
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -571,6 +573,32 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &427776917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 427776912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e66e58c027caa504d9da0715219ef865, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
+  health: {fileID: 427776918}
+--- !u!114 &427776918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 427776912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 909ab1f28902b8d4badd8caa012e9b68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Health
+  maxHealth: 9999999
 --- !u!1 &562880390
 GameObject:
   m_ObjectHideFlags: 0
@@ -1143,6 +1171,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillDebugView
   logSkillInput: 1
   logOverlapHits: 1
+  logRaycastHits: 1
+  logProjectileHits: 1
+  logAreaTicks: 1
   drawHitboxes: 1
   displayDuration: 0.4
   missColor: {r: 0, g: 1, b: 0, a: 1}

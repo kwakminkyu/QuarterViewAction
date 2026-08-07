@@ -20,6 +20,7 @@ public sealed class SkillController : MonoBehaviour
     private CharacterMovement movement;
     private DamageReceiver damageReceiver;
     private Health health;
+    private readonly OverlapAttack overlapAttack = new();
     private SkillInstance[] skillInstances =
         Array.Empty<SkillInstance>();
 
@@ -32,9 +33,30 @@ public sealed class SkillController : MonoBehaviour
     private bool isFinishingSkill;
 
     public bool IsExecuting => currentSkill != null;
+    public SkillDefinition CurrentSkillDefinition =>
+        currentSkill?.Definition;
     public SkillPhase CurrentPhase => currentPhase;
     public int CurrentActionIndex => currentActionIndex;
     public int SkillSlotCount => skillInstances.Length;
+    public float CurrentPhaseRemainingTime
+    {
+        get
+        {
+            if (currentSkill == null ||
+                !TryGetAction(
+                    currentSkill.Definition,
+                    currentActionIndex,
+                    out SkillAction action))
+            {
+                return 0f;
+            }
+
+            float duration = GetPhaseDuration(
+                action,
+                currentPhase);
+            return Mathf.Max(duration - phaseElapsedTime, 0f);
+        }
+    }
 
     private void Awake()
     {
@@ -201,10 +223,10 @@ public sealed class SkillController : MonoBehaviour
             {
                 case SkillPhase.Startup:
                     ConsumePhaseTime(
-                        action.StartupDuration,
+                        action.startupDuration,
                         ref remainingTime);
 
-                    if (!IsPhaseComplete(action.StartupDuration))
+                    if (!IsPhaseComplete(action.startupDuration))
                     {
                         return;
                     }
@@ -223,7 +245,7 @@ public sealed class SkillController : MonoBehaviour
 
                 case SkillPhase.Active:
                     float activeDeltaTime = ConsumePhaseTime(
-                        action.ActiveDuration,
+                        action.activeDuration,
                         ref remainingTime);
 
                     if (activeDeltaTime > 0f)
@@ -238,7 +260,7 @@ public sealed class SkillController : MonoBehaviour
                         return;
                     }
 
-                    if (!IsPhaseComplete(action.ActiveDuration))
+                    if (!IsPhaseComplete(action.activeDuration))
                     {
                         return;
                     }
@@ -257,10 +279,10 @@ public sealed class SkillController : MonoBehaviour
 
                 case SkillPhase.Recovery:
                     ConsumePhaseTime(
-                        action.RecoveryDuration,
+                        action.recoveryDuration,
                         ref remainingTime);
 
-                    if (!IsPhaseComplete(action.RecoveryDuration))
+                    if (!IsPhaseComplete(action.recoveryDuration))
                     {
                         return;
                     }
@@ -307,7 +329,7 @@ public sealed class SkillController : MonoBehaviour
     private bool CanStartDuringRecovery(SkillInstance requestedSkill)
     {
         return currentPhase == SkillPhase.Recovery &&
-            requestedSkill.Definition.CanStartDuringRecovery;
+            requestedSkill.Definition.canStartDuringRecovery;
     }
 
     private bool CanBeginSkill(SkillInstance skill)
@@ -351,6 +373,26 @@ public sealed class SkillController : MonoBehaviour
         phaseElapsedTime = 0f;
     }
 
+    private static float GetPhaseDuration(
+        SkillAction action,
+        SkillPhase phase)
+    {
+        switch (phase)
+        {
+            case SkillPhase.Startup:
+                return action.startupDuration;
+
+            case SkillPhase.Active:
+                return action.activeDuration;
+
+            case SkillPhase.Recovery:
+                return action.recoveryDuration;
+
+            default:
+                return 0f;
+        }
+    }
+
     private void InvokeActionEnter(SkillAction action)
     {
         SkillActionContext context = CreateActionContext(0f);
@@ -377,6 +419,7 @@ public sealed class SkillController : MonoBehaviour
             gameObject,
             movement,
             damageReceiver,
+            overlapAttack,
             currentSkill.Definition,
             currentActionIndex,
             currentDirection,

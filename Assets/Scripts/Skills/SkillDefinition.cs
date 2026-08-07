@@ -1,21 +1,15 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "SkillDefinition", menuName = "Skills/Skill Definition")]
 public sealed class SkillDefinition : ScriptableObject
 {
-    [SerializeField] private string skillId;
-    [SerializeField] private float cooldown;
-    [SerializeField] private bool canStartDuringRecovery;
-    [SerializeField] private SkillAction[] actions =
+    public string skillId;
+    [Min(0f)] public float cooldown;
+    public bool canStartDuringRecovery;
+    public SkillAction[] actions =
         Array.Empty<SkillAction>();
 
-    public string SkillId => skillId;
-    public float Cooldown => Mathf.Max(0f, cooldown);
-    public bool CanStartDuringRecovery => canStartDuringRecovery;
-    public IReadOnlyList<SkillAction> Actions =>
-        actions ?? Array.Empty<SkillAction>();
     public int ActionCount => actions?.Length ?? 0;
     public bool IsCombo => ActionCount > 1;
 

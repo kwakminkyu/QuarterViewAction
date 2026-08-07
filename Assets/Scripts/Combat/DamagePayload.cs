@@ -4,13 +4,9 @@ using UnityEngine;
 [Serializable]
 public struct DamagePayload
 {
-    [SerializeField] private float damage;
-    [SerializeField] private float stagger;
-    [SerializeField] private float knockback;
-
-    public float Damage => damage;
-    public float Stagger => stagger;
-    public float Knockback => knockback;
+    [Min(0f)] public float damage;
+    [Min(0f)] public float stagger;
+    [Min(0f)] public float knockback;
 
     public DamagePayload(float damage, float stagger, float knockback)
     {

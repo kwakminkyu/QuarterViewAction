@@ -66,10 +66,10 @@ public sealed class OverlapAttack
                     hitDirection);
 
                 float healthBeforeDamage =
-                    receiver.Health.CurrentHealth;
+                    receiver.health.CurrentHealth;
                 receiver.TakeDamage(in damageInfo);
 
-                if (receiver.Health.CurrentHealth < healthBeforeDamage)
+                if (receiver.health.CurrentHealth < healthBeforeDamage)
                 {
                     hitCount++;
                 }
@@ -111,29 +111,29 @@ public sealed class OverlapAttack
         Vector3 position,
         Quaternion rotation)
     {
-        switch (data.Shape)
+        switch (data.shape)
         {
             case OverlapShape.Box:
                 return Physics.OverlapBoxNonAlloc(
                     position,
-                    data.BoxSize * 0.5f,
+                    data.boxSize * 0.5f,
                     colliderBuffer,
                     rotation,
-                    data.TargetMask,
-                    data.TriggerInteraction);
+                    data.targetMask,
+                    data.triggerInteraction);
 
             case OverlapShape.Sphere:
                 return Physics.OverlapSphereNonAlloc(
                     position,
-                    data.Radius,
+                    data.radius,
                     colliderBuffer,
-                    data.TargetMask,
-                    data.TriggerInteraction);
+                    data.targetMask,
+                    data.triggerInteraction);
 
             default:
                 throw new ArgumentOutOfRangeException(
-                    nameof(data.Shape),
-                    data.Shape,
+                    nameof(data.shape),
+                    data.shape,
                     null);
         }
     }

@@ -4,11 +4,10 @@ using UnityEngine;
 [RequireComponent(typeof(Health))]
 public sealed class DamageReceiver : MonoBehaviour, IDamageable
 {
-    [SerializeField] private Health health;
+    public Health health;
 
     private bool isInvulnerable;
 
-    public Health Health => health;
     public bool IsInvulnerable => isInvulnerable;
     public event Action<DamageInfo> DamageReceived;
 
@@ -42,7 +41,7 @@ public sealed class DamageReceiver : MonoBehaviour, IDamageable
             return;
         }
 
-        health.Decrease(info.Payload.Damage);
+        health.Decrease(info.Payload.damage);
         DamageReceived?.Invoke(info);
     }
 }
