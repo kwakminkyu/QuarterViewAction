@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__UnityMCP__manage_gameobject",
+      "mcp__UnityMCP__manage_scene"
+    ]
+  }
+}

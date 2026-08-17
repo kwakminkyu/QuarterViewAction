@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4d2a5b87c1e4c8b9a603f2d7e114003, type: 3}
+  m_Name: PlayerBasicAttackRange
+  m_EditorClassIdentifier: Assembly-CSharp::SkillDefinition
+  skillId: player.basic_attack.range
+  cooldown: 0.2
+  canStartDuringRecovery: 0
+  actions:
+  - {fileID: 11400000, guid: dbc00e26c7465fb48be88f24f9343e28, type: 2}
+  - {fileID: 11400000, guid: 0b832207f724c3b41ac9966d1c3ae74d, type: 2}
+  - {fileID: 11400000, guid: 7d9398530546f3e4e892fc9557cc9acd, type: 2}

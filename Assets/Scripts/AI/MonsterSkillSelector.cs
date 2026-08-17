@@ -17,7 +17,6 @@ public sealed class MonsterSkillSelector : MonoBehaviour
     private float recentSkillWeightMultiplier = 0.4f;
     [SerializeField, Min(0f)]
     private float comboInputSafetyTime = 0.01f;
-    public Transform target;
 
     private SkillController skillController;
     private int selectedSlot = -1;
@@ -31,24 +30,19 @@ public sealed class MonsterSkillSelector : MonoBehaviour
         skillController = GetComponent<SkillController>();
     }
 
-    private void Update()
+    public void Tick(Transform target)
     {
         if (skillController.IsExecuting)
         {
-            TryContinueCombo();
+            TryContinueCombo(target);
             return;
         }
 
         selectedSlot = -1;
-        TryUseRandomSkill();
+        TryUseRandomSkill(target);
     }
 
-    public void SetTarget(Transform newTarget)
-    {
-        target = newTarget;
-    }
-
-    private void TryUseRandomSkill()
+    private void TryUseRandomSkill(Transform target)
     {
         WeightedSkill selectedSkill = SelectWeightedSkill();
 
@@ -60,7 +54,7 @@ public sealed class MonsterSkillSelector : MonoBehaviour
         int slotIndex = selectedSkill.slotIndex;
         bool accepted = skillController.TryUseSkill(
             slotIndex,
-            GetTargetDirection(),
+            GetTargetDirection(target),
             target);
 
         if (!accepted)
@@ -135,7 +129,7 @@ public sealed class MonsterSkillSelector : MonoBehaviour
         return skill.weight * multiplier;
     }
 
-    private void TryContinueCombo()
+    private void TryContinueCombo(Transform target)
     {
         SkillDefinition definition =
             skillController.CurrentSkillDefinition;
@@ -161,11 +155,11 @@ public sealed class MonsterSkillSelector : MonoBehaviour
 
         skillController.TryUseSkill(
             selectedSlot,
-            GetTargetDirection(),
+            GetTargetDirection(target),
             target);
     }
 
-    private Vector3 GetTargetDirection()
+    private Vector3 GetTargetDirection(Transform target)
     {
         if (target == null)
         {
