@@ -611,7 +611,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!23 &1149345670
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -883,28 +883,11 @@ MonoBehaviour:
   m_MinRegionArea: 2
   m_NavMeshData: {fileID: 23800000, guid: 95f722929ea27da45a07f217fe95ec21, type: 2}
   m_BuildHeightMesh: 0
---- !u!1 &1221321933 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8914209181927161043, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-  m_PrefabInstance: {fileID: 8376766332406191374}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1221321934 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 610790815929958054, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
   m_PrefabInstance: {fileID: 8376766332406191374}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1221321949
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1221321933}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 201cdda74db1e3d45b71c227645a7b5a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerReference
 --- !u!134 &1269925796
 PhysicsMaterial:
   m_ObjectHideFlags: 0
@@ -1065,7 +1048,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 610790815929958054, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 610790815929958054, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_LocalRotation.x
@@ -1073,7 +1056,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 610790815929958054, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 610790815929958054, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_LocalRotation.z
@@ -1085,7 +1068,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 610790815929958054, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 610790815929958054, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -1095,10 +1078,10 @@ PrefabInstance:
       propertyPath: m_Material
       value: 
       objectReference: {fileID: 1652115445}
-    - target: {fileID: 8516258846143312864, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      propertyPath: 'equippedSkills.Array.data[0]'
+    - target: {fileID: 6689189243285589222, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: 75fac0a7f4794ade8303579310c9e02e, type: 2}
+      objectReference: {fileID: 2100000, guid: 176d0b9e3de1b624087f38149a2f0d88, type: 2}
     - target: {fileID: 8914209181927161043, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_Name
       value: Player
@@ -1106,10 +1089,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8914209181927161043, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1221321949}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
