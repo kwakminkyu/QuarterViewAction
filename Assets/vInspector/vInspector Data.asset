@@ -12,18 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7915df4cd4da490ab52fc8fa9ee9127, type: 3}
   m_Name: vInspector Data
   m_EditorClassIdentifier: VInspector::VInspector.VInspectorData
-  bookmarks:
-  - _obj: {fileID: 919132149155446097, guid: 76c1e9e970efb0340b1fc6a7d24a2d94, type: 3}
-    globalId:
-      globalObjectIdString: GlobalObjectId_V1-1-76c1e9e970efb0340b1fc6a7d24a2d94-919132149155446097-0
-    isSceneGameObject: 0
-    isAsset: 1
-    _typeString: UnityEngine.GameObject, UnityEngine.CoreModule, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-  - _obj: {fileID: 919132149155446097, guid: 21a0f63763bdef74586b8486da71a12c, type: 3}
-    globalId:
-      globalObjectIdString: GlobalObjectId_V1-1-21a0f63763bdef74586b8486da71a12c-919132149155446097-0
-    isSceneGameObject: 0
-    isAsset: 1
-    _typeString: UnityEngine.GameObject, UnityEngine.CoreModule, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+  bookmarks: []
