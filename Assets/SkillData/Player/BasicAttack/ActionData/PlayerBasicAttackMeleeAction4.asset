@@ -18,3 +18,4 @@ MonoBehaviour:
   attackData: {fileID: 11400000, guid: d72f9186f7a0410d883a48155c0e1c91, type: 2}
   centerOffset: {x: 0, y: 0.9, z: 1.1}
   invulnerableUntilSkillEnds: 0
+  lungeDistance: 1

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 260d1d3dc881ce04abfbaed08f94377e
+guid: df4883818b47e8243a979b0c18991ab2
 ModelImporter:
   serializedVersion: 24501
   internalIDToNameTable: []
@@ -32,23 +32,23 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: TEST
+      name: BasicCombo1
       takeName: mixamo.com
       internalID: -203655887218126122
-      firstFrame: 0
-      lastFrame: 17
+      firstFrame: 10
+      lastFrame: 31
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
       cycleOffset: 0
       loop: 0
       hasAdditiveReferencePose: 0
-      loopTime: 1
+      loopTime: 0
       loopBlend: 0
-      loopBlendOrientation: 0
+      loopBlendOrientation: 1
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
-      keepOriginalOrientation: 0
+      keepOriginalOrientation: 1
       keepOriginalPositionY: 1
       keepOriginalPositionXZ: 0
       heightFromFeet: 0

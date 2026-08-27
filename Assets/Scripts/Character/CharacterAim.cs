@@ -27,8 +27,18 @@ public sealed class CharacterAim : MonoBehaviour
         }
 
         AimDirection = worldDirection.normalized;
+    }
 
-        Quaternion targetRotation = Quaternion.LookRotation(AimDirection, Vector3.up);
+    public void FaceDirection(Vector3 worldDirection)
+    {
+        worldDirection.y = 0f;
+
+        if (worldDirection.sqrMagnitude <= Mathf.Epsilon)
+        {
+            return;
+        }
+
+        Quaternion targetRotation = Quaternion.LookRotation(worldDirection.normalized, Vector3.up);
 
         rotationTarget.rotation = Quaternion.RotateTowards(rotationTarget.rotation, targetRotation, turnSpeed * Time.deltaTime);
     }

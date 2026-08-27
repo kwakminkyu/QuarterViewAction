@@ -7,6 +7,7 @@ public sealed class OverlapSkillAction : SkillAction
     public Vector3 centerOffset =
         new Vector3(0f, 1f, 1f);
     public bool invulnerableUntilSkillEnds;
+    [Min(0f)] public float lungeDistance;
 
     public override void OnActiveEnter(
         in SkillActionContext context)
@@ -55,6 +56,18 @@ public sealed class OverlapSkillAction : SkillAction
         }
     }
 
+    public override void OnActiveUpdate(
+        in SkillActionContext context)
+    {
+        if (lungeDistance <= Mathf.Epsilon)
+        {
+            return;
+        }
+
+        Vector3 direction = ResolveDirection(in context);
+        ApplyLunge(in context, direction, lungeDistance);
+    }
+
     public override void OnSkillEnd(
         in SkillActionContext context)
     {
@@ -62,30 +75,5 @@ public sealed class OverlapSkillAction : SkillAction
         {
             context.DamageReceiver.SetInvulnerable(false);
         }
-    }
-
-    private static Vector3 ResolveDirection(
-        in SkillActionContext context)
-    {
-        Vector3 direction = context.Direction;
-        direction.y = 0f;
-
-        if (direction.sqrMagnitude <= Mathf.Epsilon &&
-            context.Target != null)
-        {
-            direction = context.Target.position -
-                context.User.transform.position;
-            direction.y = 0f;
-        }
-
-        if (direction.sqrMagnitude <= Mathf.Epsilon)
-        {
-            direction = context.User.transform.forward;
-            direction.y = 0f;
-        }
-
-        return direction.sqrMagnitude <= Mathf.Epsilon
-            ? Vector3.forward
-            : direction.normalized;
     }
 }

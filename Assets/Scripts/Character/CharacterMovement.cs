@@ -10,6 +10,7 @@ public sealed class CharacterMovement : MonoBehaviour
 
     private CharacterController characterController;
     private DamageReceiver damageReceiver;
+    private PlayerAnimationController animationController;
     private Vector3 knockbackVelocity;
     private Vector3 skillVelocity;
     private float verticalVelocity;
@@ -22,6 +23,7 @@ public sealed class CharacterMovement : MonoBehaviour
     {
         characterController = GetComponent<CharacterController>();
         damageReceiver = GetComponent<DamageReceiver>();
+        animationController = GetComponentInChildren<PlayerAnimationController>();
     }
 
     private void OnEnable()
@@ -55,6 +57,11 @@ public sealed class CharacterMovement : MonoBehaviour
         velocity.y = verticalVelocity;
 
         characterController.Move(velocity * Time.deltaTime);
+
+        if (animationController != null)
+        {
+            animationController.SetMoving(IsMoving);
+        }
 
         knockbackVelocity = Vector3.MoveTowards(
             knockbackVelocity,

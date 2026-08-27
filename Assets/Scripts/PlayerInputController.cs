@@ -16,7 +16,9 @@ public sealed class PlayerInputController : MonoBehaviour
     private CharacterAim characterAim;
     private SkillController skillController;
     private SkillDebugView skillDebugView;
+    private PlayerAnimationController animationController;
     private Camera worldCamera;
+    private bool wasAttacking;
 
     public Vector2 MoveInput { get; private set; }
     public Vector2 AimInput { get; private set; }
@@ -27,6 +29,7 @@ public sealed class PlayerInputController : MonoBehaviour
         characterAim = GetComponent<CharacterAim>();
         skillController = GetComponent<SkillController>();
         skillDebugView = GetComponent<SkillDebugView>();
+        animationController = GetComponentInChildren<PlayerAnimationController>();
         worldCamera = Camera.main;
     }
 
@@ -42,11 +45,16 @@ public sealed class PlayerInputController : MonoBehaviour
 
     public void OnAttack(InputAction.CallbackContext context)
     {
-        TryUseSkill(
+        bool accepted = TryUseSkill(
             context,
             BasicAttackSlot,
             "Basic attack",
             characterAim.AimDirection);
+
+        if (accepted && animationController != null)
+        {
+            animationController.PlayAttack(skillController.CurrentActionIndex);
+        }
     }
 
     public void OnSpecialAttack(InputAction.CallbackContext context)
@@ -85,8 +93,28 @@ public sealed class PlayerInputController : MonoBehaviour
 
     private void Update()
     {
-        characterMovement.Move(GetCameraRelativeMoveDirection(MoveInput));
+        Vector3 moveDirection = GetCameraRelativeMoveDirection(MoveInput);
+        characterMovement.Move(moveDirection);
         UpdateAim(AimInput);
+
+        Vector3 facingDirection = skillController.IsExecuting
+            ? characterAim.AimDirection
+            : moveDirection;
+        characterAim.FaceDirection(facingDirection);
+
+        UpdateAttackEnd();
+    }
+
+    private void UpdateAttackEnd()
+    {
+        bool isAttacking = skillController.IsExecuting;
+
+        if (wasAttacking && !isAttacking && animationController != null)
+        {
+            animationController.EndAttack();
+        }
+
+        wasAttacking = isAttacking;
     }
 
     private Vector3 GetCameraRelativeMoveDirection(Vector2 input)
@@ -102,7 +130,7 @@ public sealed class PlayerInputController : MonoBehaviour
         return cameraRight * input.x + cameraForward * input.y;
     }
 
-    private void TryUseSkill(
+    private bool TryUseSkill(
         InputAction.CallbackContext context,
         int slotIndex,
         string skillName,
@@ -110,7 +138,7 @@ public sealed class PlayerInputController : MonoBehaviour
     {
         if (!context.performed)
         {
-            return;
+            return false;
         }
 
         bool accepted = skillController.TryUseSkill(
@@ -123,6 +151,8 @@ public sealed class PlayerInputController : MonoBehaviour
             accepted,
             skillController.CurrentActionIndex,
             skillController.CurrentPhase);
+
+        return accepted;
     }
 
     private void UpdateAim(Vector2 screenPosition)
