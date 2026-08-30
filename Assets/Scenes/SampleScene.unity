@@ -237,7 +237,7 @@ MonoBehaviour:
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 1
-  m_Antialiasing: 0
+  m_Antialiasing: 3
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 0
@@ -1078,6 +1078,14 @@ PrefabInstance:
       propertyPath: m_Material
       value: 
       objectReference: {fileID: 1652115445}
+    - target: {fileID: 4743992102141522932, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: m_WarningMessage
+      value: "\nBinding warning: Some generic clip(s) animate transforms that are
+        already bound by a Humanoid avatar. These transforms can only be changed
+        by Humanoid clips.\n\tTransform 'mixamorig:RightHand'\n\tTransform 'mixamorig:RightHandIndex1'\n\tTransform
+        'mixamorig:RightHand'\n\tTransform 'mixamorig:RightHandIndex1'\n\tTransform
+        'mixamorig:RightHand'\n\tTransform 'mixamorig:RightHandIndex1'"
+      objectReference: {fileID: 0}
     - target: {fileID: 8914209181927161043, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_Name
       value: Player

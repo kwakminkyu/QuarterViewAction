@@ -12,17 +12,36 @@ public sealed class OverlapSkillAction : SkillAction
     public override void OnActiveEnter(
         in SkillActionContext context)
     {
+        if (invulnerableUntilSkillEnds)
+        {
+            context.DamageReceiver.SetInvulnerable(true);
+        }
+
+        ExecuteOverlapAttack(in context);
+    }
+
+    public override void OnActiveUpdate(
+        in SkillActionContext context)
+    {
+        ExecuteOverlapAttack(in context);
+
+        if (lungeDistance <= Mathf.Epsilon)
+        {
+            return;
+        }
+
+        Vector3 direction = ResolveDirection(in context);
+        ApplyLunge(in context, direction, lungeDistance);
+    }
+
+    private void ExecuteOverlapAttack(in SkillActionContext context)
+    {
         if (attackData == null)
         {
             Debug.LogError(
                 $"{name} has no overlap attack data.",
                 this);
             return;
-        }
-
-        if (invulnerableUntilSkillEnds)
-        {
-            context.DamageReceiver.SetInvulnerable(true);
         }
 
         Vector3 direction = ResolveDirection(in context);
@@ -54,18 +73,6 @@ public sealed class OverlapSkillAction : SkillAction
                 rotation,
                 hitCount);
         }
-    }
-
-    public override void OnActiveUpdate(
-        in SkillActionContext context)
-    {
-        if (lungeDistance <= Mathf.Epsilon)
-        {
-            return;
-        }
-
-        Vector3 direction = ResolveDirection(in context);
-        ApplyLunge(in context, direction, lungeDistance);
     }
 
     public override void OnSkillEnd(

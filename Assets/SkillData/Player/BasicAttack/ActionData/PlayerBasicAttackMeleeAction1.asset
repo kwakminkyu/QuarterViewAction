@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90c8e08c88064c06a30b760fed38b32a, type: 3}
   m_Name: PlayerBasicAttackMeleeAction1
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
-  startupDuration: 0.18
-  activeDuration: 0.08
-  recoveryDuration: 0.32
+  startupDuration: 0.1
+  activeDuration: 0.266667
+  recoveryDuration: 0.333333
   attackData: {fileID: 11400000, guid: ce5577a2ffc847419d19bb5d0fb011c0, type: 2}
   centerOffset: {x: 0, y: 0.9, z: 1}
   invulnerableUntilSkillEnds: 0

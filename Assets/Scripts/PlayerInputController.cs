@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,7 +19,9 @@ public sealed class PlayerInputController : MonoBehaviour
     private SkillDebugView skillDebugView;
     private PlayerAnimationController animationController;
     private Camera worldCamera;
+    private SkillDefinition basicAttackDefinition;
     private bool wasAttacking;
+    private int lastAnimatedActionIndex = -1;
 
     public Vector2 MoveInput { get; private set; }
     public Vector2 AimInput { get; private set; }
@@ -31,6 +34,16 @@ public sealed class PlayerInputController : MonoBehaviour
         skillDebugView = GetComponent<SkillDebugView>();
         animationController = GetComponentInChildren<PlayerAnimationController>();
         worldCamera = Camera.main;
+
+        try
+        {
+            basicAttackDefinition =
+                skillController.GetSkillInstance(BasicAttackSlot).Definition;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            basicAttackDefinition = null;
+        }
     }
 
     public void OnMove(InputAction.CallbackContext context)
@@ -45,16 +58,11 @@ public sealed class PlayerInputController : MonoBehaviour
 
     public void OnAttack(InputAction.CallbackContext context)
     {
-        bool accepted = TryUseSkill(
+        TryUseSkill(
             context,
             BasicAttackSlot,
             "Basic attack",
             characterAim.AimDirection);
-
-        if (accepted && animationController != null)
-        {
-            animationController.PlayAttack(skillController.CurrentActionIndex);
-        }
     }
 
     public void OnSpecialAttack(InputAction.CallbackContext context)
@@ -102,7 +110,31 @@ public sealed class PlayerInputController : MonoBehaviour
             : moveDirection;
         characterAim.FaceDirection(facingDirection);
 
+        UpdateAttackAnimation();
         UpdateAttackEnd();
+    }
+
+    private void UpdateAttackAnimation()
+    {
+        bool isBasicAttackActive =
+            skillController.IsExecuting &&
+            skillController.CurrentSkillDefinition == basicAttackDefinition;
+
+        if (!isBasicAttackActive)
+        {
+            lastAnimatedActionIndex = -1;
+            return;
+        }
+
+        int actionIndex = skillController.CurrentActionIndex;
+
+        if (actionIndex == lastAnimatedActionIndex)
+        {
+            return;
+        }
+
+        lastAnimatedActionIndex = actionIndex;
+        animationController?.PlayAttack(actionIndex);
     }
 
     private void UpdateAttackEnd()

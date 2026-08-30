@@ -31,6 +31,9 @@ public sealed class SkillController : MonoBehaviour
     private Vector3 currentDirection;
     private Transform currentTarget;
     private bool isFinishingSkill;
+    private bool hasPendingCombo;
+    private Vector3 pendingComboDirection;
+    private Transform pendingComboTarget;
 
     public bool IsExecuting => currentSkill != null;
     public SkillDefinition CurrentSkillDefinition =>
@@ -232,6 +235,7 @@ public sealed class SkillController : MonoBehaviour
                     }
 
                     ChangePhase(SkillPhase.Active);
+                    overlapAttack.ResetHits();
                     InvokeActionEnter(action);
 
                     if (!IsStillExecuting(
@@ -282,6 +286,15 @@ public sealed class SkillController : MonoBehaviour
                         action.recoveryDuration,
                         ref remainingTime);
 
+                    if (hasPendingCombo &&
+                        phaseElapsedTime >= action.recoveryCancelDelay)
+                    {
+                        AdvanceCombo(
+                            pendingComboDirection,
+                            pendingComboTarget);
+                        break;
+                    }
+
                     if (!IsPhaseComplete(action.recoveryDuration))
                     {
                         return;
@@ -305,25 +318,52 @@ public sealed class SkillController : MonoBehaviour
         Vector3 direction,
         Transform target)
     {
-        if (!ReferenceEquals(currentSkill, requestedSkill) ||
-            !requestedSkill.Definition.IsCombo ||
-            currentPhase != SkillPhase.Recovery ||
-            currentActionIndex >=
-                requestedSkill.Definition.ActionCount - 1 ||
-            !TryGetAction(
-                requestedSkill.Definition,
-                currentActionIndex + 1,
-                out _))
+        if (!CanContinueCombo(requestedSkill, out SkillAction currentAction))
         {
             return false;
         }
 
+        if (phaseElapsedTime < currentAction.recoveryCancelDelay)
+        {
+            hasPendingCombo = true;
+            pendingComboDirection = direction;
+            pendingComboTarget = target;
+            return true;
+        }
+
+        AdvanceCombo(direction, target);
+        UpdateCurrentExecution(0f);
+        return true;
+    }
+
+    private bool CanContinueCombo(
+        SkillInstance requestedSkill,
+        out SkillAction currentAction)
+    {
+        currentAction = null;
+
+        return ReferenceEquals(currentSkill, requestedSkill) &&
+            requestedSkill.Definition.IsCombo &&
+            currentPhase == SkillPhase.Recovery &&
+            currentActionIndex <
+                requestedSkill.Definition.ActionCount - 1 &&
+            TryGetAction(
+                requestedSkill.Definition,
+                currentActionIndex + 1,
+                out _) &&
+            TryGetAction(
+                requestedSkill.Definition,
+                currentActionIndex,
+                out currentAction);
+    }
+
+    private void AdvanceCombo(Vector3 direction, Transform target)
+    {
         currentActionIndex++;
         currentDirection = direction;
         currentTarget = target;
+        hasPendingCombo = false;
         ChangePhase(SkillPhase.Startup);
-        UpdateCurrentExecution(0f);
-        return true;
     }
 
     private bool CanStartDuringRecovery(SkillInstance requestedSkill)
@@ -489,6 +529,8 @@ public sealed class SkillController : MonoBehaviour
         phaseElapsedTime = 0f;
         currentDirection = Vector3.zero;
         currentTarget = null;
+        hasPendingCombo = false;
+        pendingComboTarget = null;
     }
 
     private bool TryGetSkillInstance(

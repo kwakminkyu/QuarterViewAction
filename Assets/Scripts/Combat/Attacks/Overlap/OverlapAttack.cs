@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public sealed class OverlapAttack
 {
     private Collider[] colliderBuffer;
+    private readonly HashSet<DamageReceiver> hitThisActivation = new();
 
     public OverlapAttack(int initialBufferCapacity = 32)
     {
@@ -14,6 +16,11 @@ public sealed class OverlapAttack
         }
 
         colliderBuffer = new Collider[initialBufferCapacity];
+    }
+
+    public void ResetHits()
+    {
+        hitThisActivation.Clear();
     }
 
     public int Execute(
@@ -47,7 +54,8 @@ public sealed class OverlapAttack
                 if (receiver == null ||
                     !receiver.isActiveAndEnabled ||
                     receiver == attackerReceiver ||
-                    IsAttackerCollider(context.Attacker, targetCollider))
+                    IsAttackerCollider(context.Attacker, targetCollider) ||
+                    !hitThisActivation.Add(receiver))
                 {
                     continue;
                 }

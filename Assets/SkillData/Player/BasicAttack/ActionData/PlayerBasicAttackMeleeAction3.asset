@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
   startupDuration: 0.16
   activeDuration: 0.1
-  recoveryDuration: 0.34
+  recoveryDuration: 0.1
   attackData: {fileID: 11400000, guid: 6e6b06914b294ff49cb593cd8954f648, type: 2}
   centerOffset: {x: 0, y: 0.9, z: 1.05}
   invulnerableUntilSkillEnds: 0

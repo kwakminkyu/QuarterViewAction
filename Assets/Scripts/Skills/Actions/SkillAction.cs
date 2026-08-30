@@ -5,6 +5,7 @@ public abstract class SkillAction : ScriptableObject
     [Min(0f)] public float startupDuration;
     [Min(0f)] public float activeDuration;
     [Min(0f)] public float recoveryDuration;
+    [Min(0f)] public float recoveryCancelDelay;
 
     public virtual void OnActiveEnter(in SkillActionContext context)
     {
