@@ -1026,6 +1026,23 @@ PhysicsMaterial:
   m_Bounciness: 0
   m_FrictionCombine: 0
   m_BounceCombine: 0
+--- !u!1 &3720104905810576601 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7302406262727074664, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+  m_PrefabInstance: {fileID: 8376766332406191374}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7929585275893351450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3720104905810576601}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6e1b44019cb3234ea8318643d295e9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimationController
 --- !u!1001 &8376766332406191374
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1074,17 +1091,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 718784016883509741, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.8191521
+      objectReference: {fileID: 0}
+    - target: {fileID: 718784016883509741, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.5735764
+      objectReference: {fileID: 0}
+    - target: {fileID: 718784016883509741, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 70
+      objectReference: {fileID: 0}
     - target: {fileID: 1864570352213574288, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_Material
       value: 
       objectReference: {fileID: 1652115445}
-    - target: {fileID: 4743992102141522932, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+    - target: {fileID: 6314506172299869271, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_WarningMessage
-      value: "\nBinding warning: Some generic clip(s) animate transforms that are
-        already bound by a Humanoid avatar. These transforms can only be changed
-        by Humanoid clips.\n\tTransform 'mixamorig:RightHand'\n\tTransform 'mixamorig:RightHandIndex1'\n\tTransform
-        'mixamorig:RightHand'\n\tTransform 'mixamorig:RightHandIndex1'\n\tTransform
-        'mixamorig:RightHand'\n\tTransform 'mixamorig:RightHandIndex1'"
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6314506172299869271, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717588935268627379, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717588935268627379, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717588935268627379, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8914209181927161043, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_Name
@@ -1093,7 +1134,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7302406262727074664, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7929585275893351450}
   m_SourcePrefab: {fileID: 100100000, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
