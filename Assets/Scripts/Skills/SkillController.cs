@@ -225,9 +225,17 @@ public sealed class SkillController : MonoBehaviour
             switch (currentPhase)
             {
                 case SkillPhase.Startup:
-                    ConsumePhaseTime(
+                    float startupDeltaTime = ConsumePhaseTime(
                         action.startupDuration,
                         ref remainingTime);
+
+                    if (startupDeltaTime > 0f)
+                    {
+                        action.ApplyPhaseMovement(
+                            SkillPhase.Startup,
+                            CreateActionContext(startupDeltaTime),
+                            action.startupDuration);
+                    }
 
                     if (!IsPhaseComplete(action.startupDuration))
                     {
@@ -255,6 +263,10 @@ public sealed class SkillController : MonoBehaviour
                     if (activeDeltaTime > 0f)
                     {
                         InvokeActionUpdate(action, activeDeltaTime);
+                        action.ApplyPhaseMovement(
+                            SkillPhase.Active,
+                            CreateActionContext(activeDeltaTime),
+                            action.activeDuration);
                     }
 
                     if (!IsStillExecuting(
@@ -282,9 +294,17 @@ public sealed class SkillController : MonoBehaviour
                     break;
 
                 case SkillPhase.Recovery:
-                    ConsumePhaseTime(
+                    float recoveryDeltaTime = ConsumePhaseTime(
                         action.recoveryDuration,
                         ref remainingTime);
+
+                    if (recoveryDeltaTime > 0f)
+                    {
+                        action.ApplyPhaseMovement(
+                            SkillPhase.Recovery,
+                            CreateActionContext(recoveryDeltaTime),
+                            action.recoveryDuration);
+                    }
 
                     if (hasPendingCombo &&
                         phaseElapsedTime >= action.recoveryCancelDelay)

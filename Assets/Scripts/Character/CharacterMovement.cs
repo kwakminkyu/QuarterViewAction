@@ -99,6 +99,18 @@ public sealed class CharacterMovement : MonoBehaviour
         skillVelocity = velocity;
     }
 
+    public void MoveBySkillFollowingInput(float speedMultiplier)
+    {
+        if (!isSkillControlling)
+        {
+            return;
+        }
+
+        Vector3 velocity = MoveDirection * moveSpeed * speedMultiplier;
+        velocity.y = 0f;
+        skillVelocity = velocity;
+    }
+
     public void EndSkillControl()
     {
         isSkillControlling = false;

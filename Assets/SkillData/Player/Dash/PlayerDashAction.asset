@@ -15,4 +15,8 @@ MonoBehaviour:
   startupDuration: 0
   activeDuration: 0.18
   recoveryDuration: 0.12
-  distance: 4.5
+  movementSettings:
+    phases: 2
+    mode: 0
+    lungeDistance: 4.5
+    moveSpeedMultiplier: 0
