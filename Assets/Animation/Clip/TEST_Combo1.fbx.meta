@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 9e28c8025215c804fbdf0b37f37c2370
+guid: fbb93d067e0099e4691cc87d69e698ec
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
@@ -32,11 +32,11 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: BasicCombo1
+      name: Scene
       takeName: Scene
       internalID: -623603649343465320
       firstFrame: 0
-      lastFrame: 25
+      lastFrame: 12
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -50,7 +50,7 @@ ModelImporter:
       loopBlendPositionXZ: 0
       keepOriginalOrientation: 1
       keepOriginalPositionY: 1
-      keepOriginalPositionXZ: 1
+      keepOriginalPositionXZ: 0
       heightFromFeet: 0
       mirror: 0
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
