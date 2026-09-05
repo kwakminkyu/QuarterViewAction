@@ -106,7 +106,7 @@ public sealed class PlayerInputController : MonoBehaviour
         UpdateAim(AimInput);
 
         Vector3 facingDirection = skillController.IsExecuting
-            ? characterAim.AimDirection
+            ? skillController.CurrentDirection
             : moveDirection;
         characterAim.FaceDirection(facingDirection);
 

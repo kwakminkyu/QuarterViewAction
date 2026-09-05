@@ -40,6 +40,7 @@ public sealed class SkillController : MonoBehaviour
         currentSkill?.Definition;
     public SkillPhase CurrentPhase => currentPhase;
     public int CurrentActionIndex => currentActionIndex;
+    public Vector3 CurrentDirection => currentDirection;
     public int SkillSlotCount => skillInstances.Length;
     public float CurrentPhaseRemainingTime
     {

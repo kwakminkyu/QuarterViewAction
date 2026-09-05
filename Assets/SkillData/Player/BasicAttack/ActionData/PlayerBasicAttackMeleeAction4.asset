@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90c8e08c88064c06a30b760fed38b32a, type: 3}
   m_Name: PlayerBasicAttackMeleeAction4
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
-  startupDuration: 0.333333
+  startupDuration: 0.383333
   activeDuration: 0.2
   recoveryDuration: 0.466667
   recoveryCancelDelay: 0.2
