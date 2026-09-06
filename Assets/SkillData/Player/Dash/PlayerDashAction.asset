@@ -14,9 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DashSkillAction
   startupDuration: 0
   activeDuration: 0.18
-  recoveryDuration: 0.12
+  recoveryDuration: 0
+  recoveryCancelDelay: 0
   movementSettings:
     phases: 2
     mode: 0
-    lungeDistance: 4.5
+    lungeDistance: 3
     moveSpeedMultiplier: 0

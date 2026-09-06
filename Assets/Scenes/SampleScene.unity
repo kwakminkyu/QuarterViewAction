@@ -270,6 +270,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   target: {fileID: 1221321934}
+--- !u!1 &337037078 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8030099032837267829, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+  m_PrefabInstance: {fileID: 8376766332406191374}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &337037081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 337037078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4764ea525aac83b4bae5fa354089aa99, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponTrail
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1078,6 +1095,10 @@ PrefabInstance:
       propertyPath: m_Material
       value: 
       objectReference: {fileID: 1652115445}
+    - target: {fileID: 3892359568996877183, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      propertyPath: m_Emitting
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8914209181927161043, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_Name
       value: Player
@@ -1085,7 +1106,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8030099032837267829, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 337037081}
   m_SourcePrefab: {fileID: 100100000, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

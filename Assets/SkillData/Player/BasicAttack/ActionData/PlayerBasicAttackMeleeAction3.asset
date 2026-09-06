@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: PlayerBasicAttackMeleeAction3
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
   startupDuration: 0.233333
-  activeDuration: 0.166667
-  recoveryDuration: 0.383333
+  activeDuration: 0.2
+  recoveryDuration: 0.35
   recoveryCancelDelay: 0.15
   movementSettings:
     phases: 3
