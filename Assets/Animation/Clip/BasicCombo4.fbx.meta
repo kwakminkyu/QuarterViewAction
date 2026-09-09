@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 6e35ecd7fb570154fa8085c20f62f46c
+guid: 35f3dc14d073e334fb7a6b8d54db3286
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
@@ -241,19 +241,19 @@ ModelImporter:
     - boneName: mixamorig:LeftForeArm
       humanName: LeftLowerArm
       limit:
-        min: {x: 0, y: 0, z: 0}
-        max: {x: 0, y: 0, z: 0}
+        min: {x: -120, y: 0, z: -80}
+        max: {x: 120, y: 0, z: 80}
         value: {x: 0, y: 0, z: 0}
         length: 0
-        modified: 0
+        modified: 1
     - boneName: mixamorig:RightForeArm
       humanName: RightLowerArm
       limit:
-        min: {x: 0, y: 0, z: 0}
-        max: {x: 0, y: 0, z: 0}
+        min: {x: -120, y: 0, z: -80}
+        max: {x: 120, y: 0, z: 80}
         value: {x: 0, y: 0, z: 0}
         length: 0
-        modified: 0
+        modified: 1
     - boneName: mixamorig:LeftHand
       humanName: LeftHand
       limit:

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PlayerBasicAttackMelee
   m_EditorClassIdentifier: Assembly-CSharp::SkillDefinition
   skillId: player.basic_attack.melee
-  cooldown: 0.2
+  cooldown: 0
   canStartDuringRecovery: 0
   actions:
   - {fileID: 11400000, guid: 9d2b1fdc47a3473cac25ad8401c439dd, type: 2}
