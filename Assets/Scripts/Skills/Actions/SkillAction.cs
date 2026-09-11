@@ -34,6 +34,11 @@ public abstract class SkillAction : ScriptableObject
 
     public SkillMovementSettings movementSettings;
 
+    // Optional. Both live on the base so any action type can opt in without a
+    // subclass change; SkillController drives them on the active window.
+    public SlashEffectSettings slashEffect;
+    public BladeTrailSettings bladeTrail;
+
     public void ApplyPhaseMovement(
         SkillPhase phase,
         in SkillActionContext context,

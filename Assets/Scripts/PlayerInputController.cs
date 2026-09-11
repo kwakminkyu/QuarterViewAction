@@ -23,14 +23,6 @@ public sealed class PlayerInputController : MonoBehaviour
     private bool wasAttacking;
     private int lastAnimatedActionIndex = -1;
 
-    // TEMP: The weapon trail is referenced directly here so the effect can
-    // be evaluated in play mode. The final version drives it from
-    // OverlapSkillAction.OnActiveEnter/OnActiveExit so that any attack
-    // action can opt in and monsters get it for free. Remove weaponTrail,
-    // isTrailEmitting and UpdateWeaponTrail together with that change.
-    private WeaponTrail weaponTrail;
-    private bool isTrailEmitting;
-
     public Vector2 MoveInput { get; private set; }
     public Vector2 AimInput { get; private set; }
 
@@ -41,7 +33,6 @@ public sealed class PlayerInputController : MonoBehaviour
         skillController = GetComponent<SkillController>();
         skillDebugView = GetComponent<SkillDebugView>();
         animationController = GetComponentInChildren<PlayerAnimationController>();
-        weaponTrail = GetComponentInChildren<WeaponTrail>(); // TEMP
         worldCamera = Camera.main;
 
         try
@@ -126,38 +117,6 @@ public sealed class PlayerInputController : MonoBehaviour
 
         UpdateAttackAnimation();
         UpdateAttackEnd();
-        UpdateWeaponTrail();
-    }
-
-    // TEMP: See the weaponTrail field. Emits only during the basic attack's
-    // active window, which is the damage window the final wiring uses too.
-    private void UpdateWeaponTrail()
-    {
-        if (weaponTrail == null)
-        {
-            return;
-        }
-
-        bool shouldEmit =
-            skillController.IsExecuting &&
-            skillController.CurrentSkillDefinition == basicAttackDefinition &&
-            skillController.CurrentPhase == SkillPhase.Active;
-
-        if (shouldEmit == isTrailEmitting)
-        {
-            return;
-        }
-
-        isTrailEmitting = shouldEmit;
-
-        if (shouldEmit)
-        {
-            weaponTrail.Begin();
-        }
-        else
-        {
-            weaponTrail.End();
-        }
     }
 
     private void UpdateAttackAnimation()
@@ -180,7 +139,7 @@ public sealed class PlayerInputController : MonoBehaviour
         }
 
         lastAnimatedActionIndex = actionIndex;
-        animationController?.PlayAttack(actionIndex);
+        animationController?.PlayAttack();
     }
 
     private void UpdateAttackEnd()

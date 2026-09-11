@@ -6,6 +6,7 @@ public readonly struct SkillActionContext
     public CharacterMovement Movement { get; }
     public DamageReceiver DamageReceiver { get; }
     public OverlapAttack OverlapAttack { get; }
+    public CharacterEffectSpawner EffectSpawner { get; }
     public SkillDefinition Skill { get; }
     public int ActionIndex { get; }
     public Vector3 Direction { get; }
@@ -18,6 +19,7 @@ public readonly struct SkillActionContext
         CharacterMovement movement,
         DamageReceiver damageReceiver,
         OverlapAttack overlapAttack,
+        CharacterEffectSpawner effectSpawner,
         SkillDefinition skill,
         int actionIndex,
         Vector3 direction,
@@ -29,6 +31,7 @@ public readonly struct SkillActionContext
         Movement = movement;
         DamageReceiver = damageReceiver;
         OverlapAttack = overlapAttack;
+        EffectSpawner = effectSpawner;
         Skill = skill;
         ActionIndex = actionIndex;
         Direction = direction;

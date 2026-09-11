@@ -20,6 +20,7 @@ public sealed class SkillController : MonoBehaviour
     private CharacterMovement movement;
     private DamageReceiver damageReceiver;
     private Health health;
+    private CharacterEffectSpawner effectSpawner;
     private readonly OverlapAttack overlapAttack = new();
     private SkillInstance[] skillInstances =
         Array.Empty<SkillInstance>();
@@ -67,6 +68,10 @@ public sealed class SkillController : MonoBehaviour
         movement = GetComponent<CharacterMovement>();
         damageReceiver = GetComponent<DamageReceiver>();
         health = GetComponent<Health>();
+
+        // Optional: characters without authored effects simply have none.
+        effectSpawner = GetComponent<CharacterEffectSpawner>();
+
         CreateSkillInstances();
     }
 
@@ -457,6 +462,18 @@ public sealed class SkillController : MonoBehaviour
     private void InvokeActionEnter(SkillAction action)
     {
         SkillActionContext context = CreateActionContext(0f);
+
+        // Driven here rather than from each SkillAction subclass so every
+        // action type opts in by authoring data alone, and so the visual is
+        // bound to the same window as the damage.
+        if (effectSpawner != null)
+        {
+            effectSpawner.PlaySlash(
+                in action.slashEffect,
+                currentDirection);
+            effectSpawner.BeginTrail(in action.bladeTrail);
+        }
+
         action.OnActiveEnter(in context);
     }
 
@@ -471,6 +488,13 @@ public sealed class SkillController : MonoBehaviour
     private void InvokeActionExit(SkillAction action)
     {
         SkillActionContext context = CreateActionContext(0f);
+
+        if (effectSpawner != null)
+        {
+            effectSpawner.EndTrail();
+            effectSpawner.EndSlash();
+        }
+
         action.OnActiveExit(in context);
     }
 
@@ -481,6 +505,7 @@ public sealed class SkillController : MonoBehaviour
             movement,
             damageReceiver,
             overlapAttack,
+            effectSpawner,
             currentSkill.Definition,
             currentActionIndex,
             currentDirection,
@@ -544,6 +569,16 @@ public sealed class SkillController : MonoBehaviour
 
     private void ClearCurrentExecution()
     {
+        // The motion is over, by completion or by being cut short - a dash
+        // cancelling the recovery, a death, a disable. Cancelling rather than
+        // ending means a fade already in flight is dropped too, so nothing an
+        // attack spawned can outlive the attack.
+        if (effectSpawner != null)
+        {
+            effectSpawner.CancelTrail();
+            effectSpawner.CancelSlash();
+        }
+
         currentSkill = null;
         currentActionIndex = -1;
         currentPhase = SkillPhase.Finished;

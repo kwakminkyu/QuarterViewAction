@@ -4,7 +4,6 @@ using UnityEngine;
 public sealed class PlayerAnimationController : MonoBehaviour
 {
     private static readonly int MoveHash = Animator.StringToHash("Move");
-    private static readonly int AttackIndexHash = Animator.StringToHash("AttackIndex");
     private static readonly int AttackHash = Animator.StringToHash("Attack");
     private static readonly int AttackEndHash = Animator.StringToHash("AttackEnd");
     private static readonly int DashHash = Animator.StringToHash("Dash");
@@ -28,9 +27,9 @@ public sealed class PlayerAnimationController : MonoBehaviour
         animator.SetBool(MoveHash, isMoving);
     }
 
-    public void PlayAttack(int attackIndex)
+    public void PlayAttack()
     {
-        animator.SetInteger(AttackIndexHash, attackIndex);
+        animator.ResetTrigger(AttackEndHash);
         animator.SetTrigger(AttackHash);
     }
 
@@ -41,6 +40,7 @@ public sealed class PlayerAnimationController : MonoBehaviour
 
     public void EndAttack()
     {
+        animator.ResetTrigger(AttackHash);
         animator.SetTrigger(AttackEndHash);
     }
 }
