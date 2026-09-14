@@ -31,6 +31,13 @@ public sealed class SkillController : MonoBehaviour
     private float phaseElapsedTime;
     private Vector3 currentDirection;
     private Transform currentTarget;
+    // Effect delays are measured from the active phase opening and may run past
+    // it, so this keeps counting through recovery rather than resetting with
+    // the phase. The cursor assumes the action's effects are in ascending
+    // delay order.
+    private float effectElapsedTime;
+    private int nextEffectIndex;
+
     private bool isFinishingSkill;
     private bool hasPendingCombo;
     private Vector3 pendingComboDirection;
@@ -266,6 +273,8 @@ public sealed class SkillController : MonoBehaviour
                         action.activeDuration,
                         ref remainingTime);
 
+                    AdvanceEffects(action, activeDeltaTime);
+
                     if (activeDeltaTime > 0f)
                     {
                         InvokeActionUpdate(action, activeDeltaTime);
@@ -303,6 +312,8 @@ public sealed class SkillController : MonoBehaviour
                     float recoveryDeltaTime = ConsumePhaseTime(
                         action.recoveryDuration,
                         ref remainingTime);
+
+                    AdvanceEffects(action, recoveryDeltaTime);
 
                     if (recoveryDeltaTime > 0f)
                     {
@@ -466,13 +477,15 @@ public sealed class SkillController : MonoBehaviour
         // Driven here rather than from each SkillAction subclass so every
         // action type opts in by authoring data alone, and so the visual is
         // bound to the same window as the damage.
+        effectElapsedTime = 0f;
+        nextEffectIndex = 0;
+
         if (effectSpawner != null)
         {
-            effectSpawner.PlaySlash(
-                in action.slashEffect,
-                currentDirection);
             effectSpawner.BeginTrail(in action.bladeTrail);
         }
+
+        FireDueEffects(action);
 
         action.OnActiveEnter(in context);
     }
@@ -483,6 +496,36 @@ public sealed class SkillController : MonoBehaviour
     {
         SkillActionContext context = CreateActionContext(deltaTime);
         action.OnActiveUpdate(in context);
+    }
+
+    // Walks the action's effect list, firing everything whose delay has come
+    // due. Called from the active phase and again through recovery, because a
+    // ground impact reads better landing after the blade has finished moving.
+    private void AdvanceEffects(SkillAction action, float deltaTime)
+    {
+        if (deltaTime > 0f)
+        {
+            effectElapsedTime += deltaTime;
+        }
+
+        FireDueEffects(action);
+    }
+
+    private void FireDueEffects(SkillAction action)
+    {
+        if (effectSpawner == null || action.effects == null)
+        {
+            return;
+        }
+
+        while (nextEffectIndex < action.effects.Length &&
+            action.effects[nextEffectIndex].delay <= effectElapsedTime)
+        {
+            effectSpawner.PlaySlash(
+                in action.effects[nextEffectIndex],
+                currentDirection);
+            nextEffectIndex++;
+        }
     }
 
     private void InvokeActionExit(SkillAction action)

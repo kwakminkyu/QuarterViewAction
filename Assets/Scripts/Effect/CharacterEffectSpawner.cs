@@ -13,8 +13,14 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
     // weapon so it sits at the swing pivot rather than the blade.
     [SerializeField] private string slashAnchorName = "SlashAnchor";
 
+    // Origin every effect is placed from, and the centre the authored arcs are
+    // drawn around. Kept as a transform on the character so it can be dragged
+    // in the scene while tuning rather than typed in as numbers.
+    [SerializeField] private string effectPivotName = "EffectPivot";
+
     private BladeRibbon bladeRibbon;
     private Transform slashAnchor;
+    private Transform effectPivot;
     private Stack<SlashEffect> pool;
 
     // Slashes have to be reachable after they are handed out so the skill that
@@ -30,16 +36,19 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
 
         foreach (Transform child in GetComponentsInChildren<Transform>(true))
         {
-            if (child.name == slashAnchorName)
+            if (slashAnchor == null && child.name == slashAnchorName)
             {
                 slashAnchor = child;
-                break;
+            }
+            else if (effectPivot == null && child.name == effectPivotName)
+            {
+                effectPivot = child;
             }
         }
     }
 
     public void PlaySlash(
-        in SlashEffectSettings settings,
+        in ActionEffectSettings settings,
         Vector3 direction)
     {
         if (!settings.enabled || slashPrefab == null)
@@ -63,10 +72,14 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
 
         facing = facing.normalized;
 
-        // Same placement formula as OverlapSkillAction.ExecuteOverlapAttack so
-        // the crescent lands exactly where the hitbox does.
+        // The mesh's own pivot is the centre of the arc it draws, so the point
+        // it is placed at is that arc's centre - not where the blade is. The
+        // EffectPivot transform is that centre; offset nudges from there.
         Quaternion rotation = Quaternion.LookRotation(facing, Vector3.up);
-        Vector3 position = transform.position + rotation * settings.offset;
+        Vector3 origin = effectPivot != null
+            ? effectPivot.position
+            : transform.position;
+        Vector3 position = origin + rotation * settings.offset;
 
         rotation = ResolveSwingPlaneRotation(facing, in settings);
 
@@ -176,7 +189,7 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
     // fourth combo's chop into a horizontal sweep.
     private Quaternion ResolveSwingPlaneRotation(
         Vector3 facing,
-        in SlashEffectSettings settings)
+        in ActionEffectSettings settings)
     {
         Quaternion facingRotation = Quaternion.LookRotation(facing, Vector3.up);
 

@@ -38,7 +38,7 @@ public sealed class SlashEffect : MonoBehaviour
     private MaterialPropertyBlock propertyBlock;
 
     private CharacterEffectSpawner owner;
-    private SlashEffectSettings settings;
+    private ActionEffectSettings settings;
     private Transform followAnchor;
     private Vector3 followOffset;
     private Vector3 baseScale = Vector3.one;
@@ -61,7 +61,7 @@ public sealed class SlashEffect : MonoBehaviour
 
     public void Play(
         CharacterEffectSpawner spawner,
-        in SlashEffectSettings effectSettings,
+        in ActionEffectSettings effectSettings,
         Transform weaponAnchor)
     {
         owner = spawner;

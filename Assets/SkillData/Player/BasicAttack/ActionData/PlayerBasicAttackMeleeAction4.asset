@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90c8e08c88064c06a30b760fed38b32a, type: 3}
   m_Name: PlayerBasicAttackMeleeAction4
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
-  startupDuration: 0.383333
-  activeDuration: 0.2
+  startupDuration: 0.46666667
+  activeDuration: 0.13333334
   recoveryDuration: 0.466667
   recoveryCancelDelay: 0.2
   movementSettings:
@@ -21,25 +21,26 @@ MonoBehaviour:
     mode: 1
     lungeDistance: 0
     moveSpeedMultiplier: 0.5
-  slashEffect:
-    enabled: 1
-    mesh: {fileID: -2124705421725058983, guid: 7e0dcbdeec8d16b4883ae54376d854a2, type: 3}
+  effects:
+  - enabled: 1
+    delay: 0
+    mesh: {fileID: -462981019419857548, guid: 4ae0d1210410b2346935f27503de63f4, type: 3}
     color: {r: 4, g: 2, b: 1.1, a: 1}
-    duration: 0.28
+    duration: 0.2
     fadeOutDuration: 0.1
-    offset: {x: -0.045, y: 0.367, z: 0.391}
-    scale: {x: 0.563, y: 0.563, z: 0.563}
-    swingPlaneNormal: {x: 0.87, y: 0.241, z: 0.43}
-    localEuler: {x: 0, y: 0, z: -111.1}
-    followWeapon: 1
-    revealSpan: 0.5
-    revealSoftness: 0.15
+    offset: {x: 0, y: 0, z: -0.5}
+    scale: {x: 1, y: 1, z: 1}
+    swingPlaneNormal: {x: 1, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: -140}
+    followWeapon: 0
+    revealSpan: 1
+    revealSoftness: 0.2
     scaleCurve:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0
-        value: 0.9
+        time: -0.47916794
+        value: 0.99786985
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -47,8 +48,8 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.25
-        value: 1
+        time: -0.20417023
+        value: 1.0002365
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -57,7 +58,7 @@ MonoBehaviour:
         outWeight: 0
       - serializedVersion: 3
         time: 1
-        value: 1.08
+        value: 1
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -87,7 +88,7 @@ MonoBehaviour:
       m_RotationOrder: 4
   bladeTrail:
     enabled: 0
-    startDelay: 0.15
+    startDelay: 0.06666667
     emitDuration: 0
     color: {r: 2.8, g: 1.4, b: 0.8, a: 1}
     lengthMultiplier: 2.2

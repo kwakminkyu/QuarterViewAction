@@ -1074,38 +1074,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 718784016883509741, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.8191521
-      objectReference: {fileID: 0}
-    - target: {fileID: 718784016883509741, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 718784016883509741, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 718784016883509741, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0.5735764
-      objectReference: {fileID: 0}
-    - target: {fileID: 718784016883509741, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 718784016883509741, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1864570352213574288, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_Material
       value: 
       objectReference: {fileID: 1652115445}
-    - target: {fileID: 3892359568996877183, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      propertyPath: m_Emitting
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 8914209181927161043, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_Name
       value: Player
