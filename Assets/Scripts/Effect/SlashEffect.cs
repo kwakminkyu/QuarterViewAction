@@ -25,6 +25,10 @@ public sealed class SlashEffect : MonoBehaviour
         Shader.PropertyToID("_InnerRadius");
     private static readonly int OuterRadiusId =
         Shader.PropertyToID("_OuterRadius");
+    private static readonly int UseMeshUVId = Shader.PropertyToID("_UseMeshUV");
+    private static readonly int MeshUVRectId = Shader.PropertyToID("_MeshUVRect");
+    private static readonly int ReverseSweepId =
+        Shader.PropertyToID("_ReverseSweep");
 
     private static readonly Color DefaultColor =
         new Color(4f, 2.2f, 1f, 1f);
@@ -32,6 +36,7 @@ public sealed class SlashEffect : MonoBehaviour
     // Measuring an arc means reading its vertices, which allocates. Meshes are
     // few and shared, so the result is cached per mesh.
     private static readonly Dictionary<Mesh, Vector4> ArcCache = new();
+    private static readonly Dictionary<Mesh, Vector4> UnwrapCache = new();
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
@@ -62,17 +67,17 @@ public sealed class SlashEffect : MonoBehaviour
     public void Play(
         CharacterEffectSpawner spawner,
         in ActionEffectSettings effectSettings,
-        Transform weaponAnchor)
+        Transform followTarget)
     {
         owner = spawner;
         settings = effectSettings;
 
-        // Only the anchor's translation is tracked. Its rotation is ignored on
-        // purpose - the blade rolls about its own axis by over a hundred
-        // degrees during one lifetime, which would tumble the crescent.
-        followAnchor = weaponAnchor;
-        followOffset = weaponAnchor != null
-            ? transform.position - weaponAnchor.position
+        // Only the target's translation is tracked. The swing plane was fixed
+        // from the facing at spawn, and turning mid-swing must not swing the
+        // crescent round with it.
+        followAnchor = followTarget;
+        followOffset = followTarget != null
+            ? transform.position - followTarget.position
             : Vector3.zero;
 
         if (settings.mesh == null)
@@ -155,11 +160,6 @@ public sealed class SlashEffect : MonoBehaviour
             return;
         }
 
-        if (followAnchor != null)
-        {
-            transform.position = followAnchor.position + followOffset;
-        }
-
         elapsedTime += Time.deltaTime;
         float normalizedTime = elapsedTime / duration;
 
@@ -180,6 +180,16 @@ public sealed class SlashEffect : MonoBehaviour
         }
 
         Apply(normalizedTime, fade);
+    }
+
+    // Followed after movement and animation have run for the frame, so the
+    // effect sits where the target is this frame rather than the last one.
+    private void LateUpdate()
+    {
+        if (isPlaying && followAnchor != null)
+        {
+            transform.position = followAnchor.position + followOffset;
+        }
     }
 
     private void Finish()
@@ -215,9 +225,14 @@ public sealed class SlashEffect : MonoBehaviour
         float head = Mathf.Lerp(0f, 1f + revealSpan, sweep);
         float tail = head - revealSpan;
 
-        Vector4 arc = ResolveArc(settings.mesh);
+        Vector4 unwrap = ResolveUnwrap(settings.mesh);
+        bool useMeshUV = unwrap.z > 0f;
+        Vector4 arc = useMeshUV ? Vector4.zero : ResolveArc(settings.mesh);
 
         meshRenderer.GetPropertyBlock(propertyBlock);
+        propertyBlock.SetFloat(UseMeshUVId, useMeshUV ? 1f : 0f);
+        propertyBlock.SetVector(MeshUVRectId, unwrap);
+        propertyBlock.SetFloat(ReverseSweepId, settings.reverseSweep ? 1f : 0f);
         propertyBlock.SetColor(ColorId, color);
         propertyBlock.SetFloat(
             AlphaId,
@@ -233,6 +248,59 @@ public sealed class SlashEffect : MonoBehaviour
         propertyBlock.SetFloat(InnerRadiusId, arc.z);
         propertyBlock.SetFloat(OuterRadiusId, arc.w);
         meshRenderer.SetPropertyBlock(propertyBlock);
+    }
+
+    // A free-form mesh carries its own unwrap (U along the cut, V inner to
+    // outer); an older flat arc exported without one has every UV at zero and
+    // still needs the coordinates derived from its vertices.
+    //
+    // Returns the unwrap's bounds as (min U, min V, size U, size V), or zero
+    // size when there is none. The shader stretches those bounds to 0..1, so
+    // the unwrap only has to run the right way round - fitting it exactly to
+    // the UV square by hand in Blender is not needed. An unreadable mesh
+    // cannot be inspected and is assumed to already fill 0..1.
+    private static Vector4 ResolveUnwrap(Mesh mesh)
+    {
+        if (UnwrapCache.TryGetValue(mesh, out Vector4 cached))
+        {
+            return cached;
+        }
+
+        Vector4 rect = new Vector4(0f, 0f, 1f, 1f);
+
+        if (mesh.isReadable)
+        {
+            Vector2[] uv = mesh.uv;
+            rect = Vector4.zero;
+
+            if (uv.Length > 0)
+            {
+                Vector2 min = uv[0];
+                Vector2 max = uv[0];
+
+                for (int i = 1; i < uv.Length; i++)
+                {
+                    min = Vector2.Min(min, uv[i]);
+                    max = Vector2.Max(max, uv[i]);
+                }
+
+                Vector2 size = max - min;
+
+                if (size.x > 1e-3f && size.y > 1e-3f)
+                {
+                    rect = new Vector4(min.x, min.y, size.x, size.y);
+                }
+            }
+        }
+
+        // Outside play the mesh may be re-exported and reimported between
+        // previews, so only a running game trusts the cache.
+        if (Application.isPlaying)
+        {
+            UnwrapCache[mesh] = rect;
+        }
+
+        return rect;
     }
 
     // Returns (centre degrees, span degrees, inner radius, outer radius). The
@@ -318,7 +386,11 @@ public sealed class SlashEffect : MonoBehaviour
                 mesh);
         }
 
-        ArcCache[mesh] = arc;
+        if (Application.isPlaying)
+        {
+            ArcCache[mesh] = arc;
+        }
+
         return arc;
     }
 

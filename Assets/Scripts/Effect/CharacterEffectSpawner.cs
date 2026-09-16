@@ -9,17 +9,12 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
     [SerializeField] private SlashEffect slashPrefab;
     [SerializeField, Min(1)] private int poolSize = 4;
 
-    // Where a weapon-following slash takes its position from. Authored on the
-    // weapon so it sits at the swing pivot rather than the blade.
-    [SerializeField] private string slashAnchorName = "SlashAnchor";
-
-    // Origin every effect is placed from, and the centre the authored arcs are
-    // drawn around. Kept as a transform on the character so it can be dragged
-    // in the scene while tuning rather than typed in as numbers.
+    // Origin every effect is placed from and follows for its whole life, and
+    // the centre the authored arcs are drawn around. Kept as a transform on the
+    // character so it can be dragged in the scene while tuning rather than
+    // typed in as numbers.
     [SerializeField] private string effectPivotName = "EffectPivot";
 
-    private BladeRibbon bladeRibbon;
-    private Transform slashAnchor;
     private Transform effectPivot;
     private Stack<SlashEffect> pool;
 
@@ -32,17 +27,12 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
 
     private void Awake()
     {
-        bladeRibbon = GetComponentInChildren<BladeRibbon>(true);
-
         foreach (Transform child in GetComponentsInChildren<Transform>(true))
         {
-            if (slashAnchor == null && child.name == slashAnchorName)
-            {
-                slashAnchor = child;
-            }
-            else if (effectPivot == null && child.name == effectPivotName)
+            if (child.name == effectPivotName)
             {
                 effectPivot = child;
+                break;
             }
         }
     }
@@ -86,20 +76,22 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
         SlashEffect slash = Rent();
         Transform slashTransform = slash.transform;
 
-        // Never parented to the weapon: that would drag the anchor's rotation
-        // and scale in too. Following is done as a position offset instead, so
-        // the authored swing plane survives the blade's roll.
+        // Never parented to the pivot: that would drag the character's turning
+        // in too. Following is done as a position offset instead, so the swing
+        // plane fixed from the facing at spawn stays put.
         slashTransform.SetParent(null, false);
 
         slashTransform.SetPositionAndRotation(
             position,
             rotation * Quaternion.Euler(settings.localEuler));
 
+        // Tracked for the effect's whole life, otherwise the character lunges
+        // away from an effect left hanging where it spawned.
         active.Add(slash);
         slash.Play(
             this,
             in settings,
-            settings.followWeapon ? slashAnchor : null);
+            effectPivot != null ? effectPivot : transform);
     }
 
     // The active window closed: let every live slash fade out.
@@ -154,32 +146,6 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
 
         slash.transform.SetParent(PoolRoot, false);
         pool.Push(slash);
-    }
-
-    public void BeginTrail(in BladeTrailSettings settings)
-    {
-        if (bladeRibbon != null)
-        {
-            bladeRibbon.Begin(in settings);
-        }
-    }
-
-    public void EndTrail()
-    {
-        if (bladeRibbon != null)
-        {
-            bladeRibbon.End();
-        }
-    }
-
-    // End() only starts the ribbon's fade and is ignored once that fade is
-    // running, so cancelling needs its own path.
-    public void CancelTrail()
-    {
-        if (bladeRibbon != null)
-        {
-            bladeRibbon.Cancel();
-        }
     }
 
     // Lays the authored mesh into the plane the blade really sweeps through.

@@ -480,11 +480,6 @@ public sealed class SkillController : MonoBehaviour
         effectElapsedTime = 0f;
         nextEffectIndex = 0;
 
-        if (effectSpawner != null)
-        {
-            effectSpawner.BeginTrail(in action.bladeTrail);
-        }
-
         FireDueEffects(action);
 
         action.OnActiveEnter(in context);
@@ -534,7 +529,6 @@ public sealed class SkillController : MonoBehaviour
 
         if (effectSpawner != null)
         {
-            effectSpawner.EndTrail();
             effectSpawner.EndSlash();
         }
 
@@ -618,7 +612,6 @@ public sealed class SkillController : MonoBehaviour
         // attack spawned can outlive the attack.
         if (effectSpawner != null)
         {
-            effectSpawner.CancelTrail();
             effectSpawner.CancelSlash();
         }
 

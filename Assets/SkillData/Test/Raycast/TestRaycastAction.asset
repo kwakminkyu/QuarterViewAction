@@ -15,5 +15,12 @@ MonoBehaviour:
   startupDuration: 0.1
   activeDuration: 0.05
   recoveryDuration: 0.2
+  recoveryCancelDelay: 0
+  movementSettings:
+    phases: 0
+    mode: 0
+    lungeDistance: 0
+    moveSpeedMultiplier: 0
+  effects: []
   attackData: {fileID: 11400000, guid: b1148f0b088b4490a7c57a6db033d229, type: 2}
   originOffset: {x: 0, y: 1, z: 0.5}

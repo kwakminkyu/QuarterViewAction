@@ -51,13 +51,6 @@ public struct ActionEffectSettings
     // reused mirrored across combo steps.
     public Vector3 localEuler;
 
-    // Makes the effect travel with the weapon instead of hanging where it was
-    // struck. Only the anchor's movement is followed, never its rotation: the
-    // blade rolls about its own axis by more than a hundred degrees over one
-    // lifetime, so inheriting rotation would tumble the mesh. A ground effect
-    // wants this off.
-    public bool followWeapon;
-
     // How much of the arc is lit at once, as a fraction of its length. The
     // crescent is drawn by a band that sweeps from the start of the cut to the
     // end, so the tail is revealed first, the head catches up, and the tail
@@ -67,6 +60,11 @@ public struct ActionEffectSettings
 
     // Softness of the two moving edges, in the same fraction-of-arc units.
     [Range(0f, 0.5f)] public float revealSoftness;
+
+    // Sweeps from the mesh's far end back to its start. The authored mesh fixes
+    // which end the cut begins at, so this is what lets one crescent serve a
+    // combo that swings the other way round without re-exporting it.
+    public bool reverseSweep;
 
     // Evaluated over normalized effect time. Left empty they fall back to the
     // defaults in SlashEffect, which keeps a half-authored asset visible

@@ -32,24 +32,14 @@ MonoBehaviour:
     scale: {x: 1, y: 1, z: 1}
     swingPlaneNormal: {x: 1, y: 0, z: 0}
     localEuler: {x: 0, y: 0, z: -140}
-    followWeapon: 0
     revealSpan: 1
     revealSoftness: 0.2
     scaleCurve:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: -0.47916794
-        value: 0.99786985
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: -0.20417023
-        value: 1.0002365
+        time: 0
+        value: 1
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -86,14 +76,6 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-  bladeTrail:
-    enabled: 0
-    startDelay: 0.06666667
-    emitDuration: 0
-    color: {r: 2.8, g: 1.4, b: 0.8, a: 1}
-    lengthMultiplier: 2.2
-    widthScale: 0.32
-    fadeOutDuration: 0.24
   attackData: {fileID: 11400000, guid: d72f9186f7a0410d883a48155c0e1c91, type: 2}
   centerOffset: {x: 0, y: 0.9, z: 1.1}
   invulnerableUntilSkillEnds: 0

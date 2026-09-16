@@ -34,15 +34,13 @@ public abstract class SkillAction : ScriptableObject
 
     public SkillMovementSettings movementSettings;
 
-    // Optional. Both live on the base so any action type can opt in without a
-    // subclass change; SkillController drives them on the active window.
+    // Optional, and on the base so any action type can opt in without a
+    // subclass change; SkillController drives these on the active window.
     // Several effects can fire from one swing - a crescent as the blade lands,
     // a ground shockwave a moment later - so each entry carries its own delay
     // measured from the active phase opening. Authored in ascending delay
     // order; SkillController walks the list with a cursor.
     public ActionEffectSettings[] effects = Array.Empty<ActionEffectSettings>();
-
-    public BladeTrailSettings bladeTrail;
 
     public void ApplyPhaseMovement(
         SkillPhase phase,

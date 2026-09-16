@@ -31,10 +31,18 @@ Shader "Effect/Slash"
         _NoiseAmount ("Noise Amount", Range(0, 1)) = 0.4
         _NoiseScale ("Noise Scale", Range(0.1, 8)) = 2
 
-        // Uses the mesh's own unwrap instead of deriving the arc coordinates
-        // from vertex positions. Only worth turning on once the mesh actually
-        // has UVs, and it allows shapes that are not arcs about the origin.
-        [Toggle(_USE_MESH_UV)] _UseMeshUV ("Use Mesh UVs", Float) = 0
+        // 1 reads the mesh's own unwrap (U along the cut 0..1, V inner 0 to
+        // outer 1), which allows any shape. 0 derives the coordinates from
+        // vertex positions, which only works for a flat arc about the origin.
+        // SlashEffect sets this per mesh, so the material value is only the
+        // fallback.
+        [Toggle] _UseMeshUV ("Use Mesh UVs", Float) = 0
+        // Runs the sweep from the other end of the mesh. SlashEffect sets this
+        // per effect, so the material value is only the fallback.
+        [Toggle] _ReverseSweep ("Reverse Sweep", Float) = 0
+        // Bounds of the mesh's unwrap as (min U, min V, size U, size V),
+        // stretched to 0..1 so the unwrap need not fill the UV square exactly.
+        _MeshUVRect ("Mesh UV Rect", Vector) = (0, 0, 1, 1)
     }
 
     SubShader
@@ -51,19 +59,19 @@ Shader "Effect/Slash"
         {
             Name "SlashUnlit"
 
-            // Must match Effect/BladeRibbon exactly. If only one of the two
-            // layers takes part in depth testing they disagree wherever
-            // something occludes them.
+            // Additive so the slash reads as light, but depth-tested so the
+            // character it is swung around occludes it instead of being drawn
+            // through. Effects therefore have to be placed above the ground:
+            // anything below it is cut away.
             Blend SrcAlpha One
             ZWrite Off
-            ZTest Always
+            ZTest LEqual
             Cull Off
             Lighting Off
 
             HLSLPROGRAM
             #pragma vertex Vertex
             #pragma fragment Fragment
-            #pragma shader_feature_local _USE_MESH_UV
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -91,6 +99,8 @@ Shader "Effect/Slash"
                 float _NoiseAmount;
                 float _NoiseScale;
                 float _UseMeshUV;
+                float4 _MeshUVRect;
+                float _ReverseSweep;
             CBUFFER_END
 
             struct Attributes
@@ -118,13 +128,20 @@ Shader "Effect/Slash"
 
             half4 Fragment(Varyings input) : SV_Target
             {
+                // A per-renderer switch rather than a keyword, so meshes with
+                // and without an unwrap can share the one material.
                 float u;
                 float v;
 
-#ifdef _USE_MESH_UV
-                u = input.uv.x;
-                v = input.uv.y;
-#else
+                if (_UseMeshUV > 0.5)
+                {
+                    float2 uv = (input.uv - _MeshUVRect.xy) /
+                        max(_MeshUVRect.zw, 1e-4);
+                    u = saturate(uv.x);
+                    v = saturate(uv.y);
+                }
+                else
+                {
                 // Rotate into the arc's own frame first. The authored arc is
                 // centred on 180 degrees, so measuring the angle directly
                 // would straddle the atan2 seam and tear the sweep in half.
@@ -143,7 +160,12 @@ Shader "Effect/Slash"
                 v = saturate(
                     (radius - _InnerRadius) /
                     max(_OuterRadius - _InnerRadius, 1e-4));
-#endif
+                }
+
+                // Flipping the coordinate rather than the head and tail keeps
+                // the leading edge leading, so a reversed sweep still brightens
+                // where the blade is rather than where it has been.
+                u = lerp(u, 1.0 - u, step(0.5, _ReverseSweep));
 
                 // The lit band runs from tail to head. Both march along the
                 // arc over the effect's lifetime, so the cut is drawn on and

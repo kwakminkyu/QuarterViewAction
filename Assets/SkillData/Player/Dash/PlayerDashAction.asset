@@ -21,3 +21,4 @@ MonoBehaviour:
     mode: 0
     lungeDistance: 3
     moveSpeedMultiplier: 0
+  effects: []

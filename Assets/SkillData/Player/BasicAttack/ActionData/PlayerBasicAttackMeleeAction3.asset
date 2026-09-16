@@ -21,15 +21,61 @@ MonoBehaviour:
     mode: 1
     lungeDistance: 0
     moveSpeedMultiplier: 0.5
-  effects: []
-  bladeTrail:
-    enabled: 1
-    startDelay: 0.025333341
-    emitDuration: 0
-    color: {r: 2.4, g: 1.5, b: 0.9, a: 1}
-    lengthMultiplier: 2
-    widthScale: 0.32
-    fadeOutDuration: 0.18
+  effects:
+  - enabled: 1
+    delay: 0
+    mesh: {fileID: -462981019419857548, guid: 4ae0d1210410b2346935f27503de63f4, type: 3}
+    color: {r: 4, g: 2, b: 1.1, a: 1}
+    duration: 0.27
+    fadeOutDuration: 0.1
+    offset: {x: 0, y: 0.5, z: 0}
+    scale: {x: 1, y: 1, z: 1}
+    swingPlaneNormal: {x: 0, y: 90, z: 0}
+    localEuler: {x: 0, y: 0, z: -90}
+    revealSpan: 1
+    revealSoftness: 0.2
+    scaleCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0.7
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 1
+        value: 0.7
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 0
+    alphaCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 0
+      m_PostInfinity: 0
+      m_RotationOrder: 0
+    dissolveCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 0
+      m_PostInfinity: 0
+      m_RotationOrder: 0
+    revealCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 0
+      m_PostInfinity: 0
+      m_RotationOrder: 0
   attackData: {fileID: 11400000, guid: 6e6b06914b294ff49cb593cd8954f648, type: 2}
   centerOffset: {x: 0, y: 0.9, z: 1.05}
   invulnerableUntilSkillEnds: 0

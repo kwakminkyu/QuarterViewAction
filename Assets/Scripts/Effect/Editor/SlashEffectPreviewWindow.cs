@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 // Editor-only scrubber for the authored slash. Deliberately standalone: one
 // file, no changes to any runtime script, nothing added to a prefab or scene.
@@ -57,6 +59,12 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     private int cachedPathCombo = -1;
     private float cachedPathStart = -1f;
     private float cachedPathEnd = -1f;
+    private bool cachedPathInPlace;
+
+    // On by default so the preview matches play, where root motion is off.
+    private bool keepInPlace = true;
+    private PlayableGraph poseGraph;
+    private AnimationClip poseGraphClip;
 
     private bool hasFit;
     private float fitRadiusMin;
@@ -138,6 +146,12 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         EditorGUI.BeginChangeCheck();
         frame = EditorGUILayout.Slider(
             "Frame", frame, 0f, clip.length * ClipFrameRate);
+        keepInPlace = EditorGUILayout.Toggle(
+            new GUIContent(
+                "Keep In Place",
+                "Discard the clip's root travel, as play mode does with " +
+                "root motion off."),
+            keepInPlace);
         bool frameChanged = EditorGUI.EndChangeCheck();
 
         EditorGUILayout.BeginHorizontal();
@@ -243,6 +257,14 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             }
 
             EditorGUILayout.EndHorizontal();
+
+            using (new EditorGUI.DisabledScope(bladePathLocal.Count < 2))
+            {
+                if (GUILayout.Button("Export Blade Path (OBJ for Blender)"))
+                {
+                    ExportBladePath(action, in settings);
+                }
+            }
         }
 
         if (!previewing)
@@ -500,6 +522,81 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         SceneView.RepaintAll();
     }
 
+    // Writes the red path in the space of the mesh this entry will draw with,
+    // so a band traced over it in Blender drops in with no further placement:
+    // offset, swing plane, localEuler and scale are all undone here.
+    //
+    // Unity mirrors X when importing a Blender FBX, so X is negated going out.
+    // Blender's OBJ importer then maps OBJ (x, y, z) to Blender (x, -z, y) with
+    // its default axes, hence the reordering below.
+    private void ExportBladePath(SkillAction action, in ActionEffectSettings settings)
+    {
+        string folder = System.IO.Path.GetFullPath(
+            System.IO.Path.Combine(Application.dataPath, "..", "BladePaths"));
+        System.IO.Directory.CreateDirectory(folder);
+
+        string path = EditorUtility.SaveFilePanel(
+            "Export Blade Path",
+            folder,
+            "Combo" + comboIndex + "_Effect" + guideEffectIndex + "_BladePath",
+            "obj");
+
+        if (!string.IsNullOrEmpty(path) &&
+            WriteBladePathObj(action, in settings, path))
+        {
+            Debug.Log("Blade path written to " + path);
+        }
+    }
+
+    private bool WriteBladePathObj(
+        SkillAction action,
+        in ActionEffectSettings settings,
+        string path)
+    {
+        Vector3 origin;
+        Quaternion rotation;
+
+        if (bladePathLocal.Count < 2 ||
+            !TryGetArcFrame(action, out origin, out rotation))
+        {
+            return false;
+        }
+
+        Quaternion toMesh = Quaternion.Inverse(
+            rotation * Quaternion.Euler(settings.localEuler));
+        Vector3 scale = settings.scale.sqrMagnitude > Mathf.Epsilon
+            ? settings.scale
+            : Vector3.one;
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        var obj = new System.Text.StringBuilder();
+
+        obj.AppendLine("# Blade tip path, combo " + comboIndex +
+            ", in the mesh space of effect " + guideEffectIndex);
+        obj.AppendLine("o BladePath_Combo" + comboIndex);
+
+        for (int i = 0; i < bladePathLocal.Count; i++)
+        {
+            Vector3 world = player.transform.TransformPoint(bladePathLocal[i]);
+            Vector3 local = toMesh * (world - origin);
+            local = new Vector3(
+                local.x / scale.x, local.y / scale.y, local.z / scale.z);
+
+            obj.AppendLine(string.Format(
+                culture, "v {0:F5} {1:F5} {2:F5}", -local.x, local.z, -local.y));
+        }
+
+        obj.Append('l');
+
+        for (int i = 1; i <= bladePathLocal.Count; i++)
+        {
+            obj.Append(' ').Append(i.ToString(culture));
+        }
+
+        obj.AppendLine();
+        System.IO.File.WriteAllText(path, obj.ToString());
+        return true;
+    }
+
     // Starts the sliders from the mesh already assigned, read the same way the
     // shader reads it, so a revision can be judged against what exists.
     private void LoadFromMesh(in ActionEffectSettings settings)
@@ -533,6 +630,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         float end = start + action.activeDuration;
 
         if (cachedPathCombo == comboIndex &&
+            cachedPathInPlace == keepInPlace &&
             Mathf.Approximately(cachedPathStart, start) &&
             Mathf.Approximately(cachedPathEnd, end))
         {
@@ -540,6 +638,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         }
 
         cachedPathCombo = comboIndex;
+        cachedPathInPlace = keepInPlace;
         cachedPathStart = start;
         cachedPathEnd = end;
         bladePathLocal.Clear();
@@ -557,14 +656,52 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         for (int i = 0; i <= steps; i++)
         {
             float time = Mathf.Lerp(start, end, (float)i / steps);
-
-            AnimationMode.BeginSampling();
-            AnimationMode.SampleAnimationClip(animator.gameObject, clip, time);
-            AnimationMode.EndSampling();
+            SamplePose(clip, time);
 
             bladePathLocal.Add(
                 player.transform.InverseTransformPoint(bladeTip.position));
         }
+    }
+
+    // Sampling the clip directly applies its root curves, so the body walks
+    // off with the motion. In play the Animator has root motion off and that
+    // travel is discarded; going through a playable graph handles the root the
+    // same way, which keeps the preview where the game would.
+    private void SamplePose(AnimationClip clip, float time)
+    {
+        AnimationMode.BeginSampling();
+
+        if (keepInPlace)
+        {
+            if (!poseGraph.IsValid() || poseGraphClip != clip)
+            {
+                DestroyPoseGraph();
+                poseGraph = PlayableGraph.Create("SlashEffectPreview");
+                var output = AnimationPlayableOutput.Create(
+                    poseGraph, "Pose", animator);
+                output.SetSourcePlayable(
+                    AnimationClipPlayable.Create(poseGraph, clip));
+                poseGraphClip = clip;
+            }
+
+            AnimationMode.SamplePlayableGraph(poseGraph, 0, time);
+        }
+        else
+        {
+            AnimationMode.SampleAnimationClip(animator.gameObject, clip, time);
+        }
+
+        AnimationMode.EndSampling();
+    }
+
+    private void DestroyPoseGraph()
+    {
+        if (poseGraph.IsValid())
+        {
+            poseGraph.Destroy();
+        }
+
+        poseGraphClip = null;
     }
 
     private void ResolveGuideTransforms()
@@ -719,6 +856,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         // run against edited timings or a different player.
         bladePathLocal.Clear();
         cachedPathCombo = -1;
+        DestroyPoseGraph();
         effectPivot = null;
         bladeTip = null;
         hasFit = false;
@@ -736,10 +874,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         EnsureBladePath(action, clip);
 
         // Pose the character first; placement reads the posed transforms.
-        AnimationMode.BeginSampling();
-        AnimationMode.SampleAnimationClip(
-            animator.gameObject, clip, frame / ClipFrameRate);
-        AnimationMode.EndSampling();
+        SamplePose(clip, frame / ClipFrameRate);
 
         CharacterEffectSpawner spawner =
             player.GetComponent<CharacterEffectSpawner>();
