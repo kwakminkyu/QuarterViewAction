@@ -12,29 +12,66 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90c8e08c88064c06a30b760fed38b32a, type: 3}
   m_Name: PlayerBasicAttackMeleeAction4
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
-  startupDuration: 0.46666667
+  startupDuration: 0.53333336
   activeDuration: 0.13333334
-  recoveryDuration: 0.466667
+  recoveryDuration: 0.13333334
   recoveryCancelDelay: 0.2
   movementSettings:
-    phases: 3
+    phases: 1
     mode: 1
     lungeDistance: 0
     moveSpeedMultiplier: 0.5
   effects:
   - enabled: 1
     delay: 0
-    mesh: {fileID: -462981019419857548, guid: 4ae0d1210410b2346935f27503de63f4, type: 3}
-    color: {r: 4, g: 2, b: 1.1, a: 1}
+    mesh: {fileID: 4300000, guid: 4e38af4818bf8a74a973639f468cc7a2, type: 2}
+    prefab: {fileID: 0}
+    material: {fileID: 2100000, guid: f48cd187e779efc42aaa6f8b1960d14b, type: 2}
+    color: {r: 3.438457, g: 1.9759977, b: 1.0866821, a: 1}
     duration: 0.2
     fadeOutDuration: 0.1
-    offset: {x: 0, y: 0, z: -0.5}
-    scale: {x: 1, y: 1, z: 1}
-    swingPlaneNormal: {x: 1, y: 0, z: 0}
-    localEuler: {x: 0, y: 0, z: -140}
+    offset: {x: 0, y: 0.06, z: 0.66}
+    scale: {x: 1.5, y: 1.5, z: 1}
+    swingPlaneNormal: {x: 0, y: 1, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    stayInWorld: 1
     revealSpan: 1
-    revealSoftness: 0.2
+    revealSoftness: 0.05
     scaleCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0.12
+        inSlope: 0
+        outSlope: 6.75
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.25
+        value: 1.08
+        inSlope: 1.6500001
+        outSlope: 1.6500001
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1.5
+        inSlope: 0.05
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    scaleCurveAxes: {x: 1, y: 1, z: 0}
+    alphaCurve:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
@@ -47,8 +84,17 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 1
+        time: 0.85
         value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -58,6 +104,98 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+    dissolveCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    revealCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0.5
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0.5
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - enabled: 1
+    delay: 0
+    mesh: {fileID: 4300000, guid: c39bfcd68508b3b4ab163d39480f09ad, type: 2}
+    prefab: {fileID: 0}
+    material: {fileID: 2100000, guid: de0b85da651b54c4f95295374f31487f, type: 2}
+    color: {r: 4, g: 1.6, b: 0.8, a: 1}
+    duration: 0.2
+    fadeOutDuration: 0.1
+    offset: {x: 0, y: 0, z: 0.66}
+    scale: {x: 1, y: 1, z: 1}
+    swingPlaneNormal: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    stayInWorld: 1
+    revealSpan: 1
+    revealSoftness: 0
+    scaleCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    scaleCurveAxes: {x: 0, y: 0, z: 0}
+    alphaCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    dissolveCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    revealCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - enabled: 1
+    delay: 0
+    mesh: {fileID: 0}
+    prefab: {fileID: 6509744169203725456, guid: 4eea5ba5d4570d046aaa93b7ba767dda, type: 3}
+    material: {fileID: 0}
+    color: {r: 0, g: 0, b: 0, a: 0}
+    duration: 0
+    fadeOutDuration: 0
+    offset: {x: 0, y: 0.05, z: 0.66}
+    scale: {x: 1, y: 1, z: 1}
+    swingPlaneNormal: {x: 0, y: 1, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    stayInWorld: 1
+    revealSpan: 1
+    revealSoftness: 0
+    scaleCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    scaleCurveAxes: {x: 0, y: 0, z: 0}
     alphaCurve:
       serializedVersion: 2
       m_Curve: []

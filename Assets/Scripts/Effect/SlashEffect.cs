@@ -27,8 +27,10 @@ public sealed class SlashEffect : MonoBehaviour
         Shader.PropertyToID("_OuterRadius");
     private static readonly int UseMeshUVId = Shader.PropertyToID("_UseMeshUV");
     private static readonly int MeshUVRectId = Shader.PropertyToID("_MeshUVRect");
-    private static readonly int ReverseSweepId =
-        Shader.PropertyToID("_ReverseSweep");
+
+    // How far through its life the effect is, 0..1, for shaders that animate
+    // on their own - the shockwave ring retracts its spikes with it.
+    private static readonly int ProgressId = Shader.PropertyToID("_Progress");
 
     private static readonly Color DefaultColor =
         new Color(4f, 2.2f, 1f, 1f);
@@ -41,6 +43,10 @@ public sealed class SlashEffect : MonoBehaviour
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private MaterialPropertyBlock propertyBlock;
+
+    // The prefab's own material, restored whenever an entry does not bring its
+    // own, since pooled instances are reused across entries.
+    private Material defaultMaterial;
 
     private CharacterEffectSpawner owner;
     private ActionEffectSettings settings;
@@ -60,6 +66,7 @@ public sealed class SlashEffect : MonoBehaviour
     {
         meshFilter = GetComponent<MeshFilter>();
         meshRenderer = GetComponent<MeshRenderer>();
+        defaultMaterial = meshRenderer.sharedMaterial;
         propertyBlock = new MaterialPropertyBlock();
         meshRenderer.enabled = false;
     }
@@ -90,6 +97,9 @@ public sealed class SlashEffect : MonoBehaviour
         }
 
         meshFilter.sharedMesh = settings.mesh;
+        meshRenderer.sharedMaterial = settings.material != null
+            ? settings.material
+            : defaultMaterial;
 
         duration = settings.duration > 0f
             ? settings.duration
@@ -124,7 +134,9 @@ public sealed class SlashEffect : MonoBehaviour
     // produced it.
     public void End()
     {
-        if (!isPlaying || isFading)
+        // A ground effect is not part of the swing, so the swing ending does
+        // not cut it short; only the skill ending does, through Cancel.
+        if (!isPlaying || isFading || settings.stayInWorld)
         {
             return;
         }
@@ -132,6 +144,10 @@ public sealed class SlashEffect : MonoBehaviour
         isFading = true;
         fadeElapsedTime = 0f;
     }
+
+    // Left to play out when the attack that spawned it ends; see
+    // ActionEffectSettings.stayInWorld.
+    public bool StaysInWorld => isPlaying && settings.stayInWorld;
 
     // The motion was cut short - a dash cancelling the recovery, a death, a
     // disable. Unlike End() this ignores the fade and kills the effect now.
@@ -209,8 +225,19 @@ public sealed class SlashEffect : MonoBehaviour
 
     private void Apply(float normalizedTime, float fade)
     {
-        transform.localScale =
-            baseScale * Evaluate(settings.scaleCurve, normalizedTime, 1f);
+        float curveScale = Evaluate(settings.scaleCurve, normalizedTime, 1f);
+        Vector3 axes = settings.scaleCurveAxes.sqrMagnitude > Mathf.Epsilon
+            ? settings.scaleCurveAxes
+            : Vector3.one;
+
+        // Each axis blends from no change to the full curve by its weight, so
+        // a height-only curve leaves the footprint untouched.
+        transform.localScale = Vector3.Scale(
+            baseScale,
+            new Vector3(
+                Mathf.LerpUnclamped(1f, curveScale, axes.x),
+                Mathf.LerpUnclamped(1f, curveScale, axes.y),
+                Mathf.LerpUnclamped(1f, curveScale, axes.z)));
 
         Color color = settings.color.maxColorComponent > 0f
             ? settings.color
@@ -232,7 +259,7 @@ public sealed class SlashEffect : MonoBehaviour
         meshRenderer.GetPropertyBlock(propertyBlock);
         propertyBlock.SetFloat(UseMeshUVId, useMeshUV ? 1f : 0f);
         propertyBlock.SetVector(MeshUVRectId, unwrap);
-        propertyBlock.SetFloat(ReverseSweepId, settings.reverseSweep ? 1f : 0f);
+        propertyBlock.SetFloat(ProgressId, normalizedTime);
         propertyBlock.SetColor(ColorId, color);
         propertyBlock.SetFloat(
             AlphaId,

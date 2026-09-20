@@ -779,7 +779,9 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             float endF = startF + e.duration * ClipFrameRate;
 
             EditorGUILayout.LabelField(
-                "    [" + i + "] " + (e.mesh == null ? "no mesh" : e.mesh.name),
+                "    [" + i + "] " + (e.prefab != null
+                    ? e.prefab.name + " (particles, play mode only)"
+                    : e.mesh == null ? "no mesh" : e.mesh.name),
                 "f" + startF.ToString("F1") + " .. f" + endF.ToString("F1") +
                 (e.enabled ? "" : "   (DISABLED)"));
 
@@ -900,7 +902,11 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             float normalized =
                 settings.duration > 0f ? elapsed / settings.duration : 0f;
 
+            // Particle entries are left out: their systems only simulate in
+            // play, and handing one to the spawner here would instantiate the
+            // prefab into the edited scene.
             bool visible = settings.enabled && settings.mesh != null &&
+                settings.prefab == null &&
                 normalized >= 0f && normalized <= 1f;
 
             if (!visible)

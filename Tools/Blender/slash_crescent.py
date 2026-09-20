@@ -53,6 +53,19 @@ TAPER_END = 0.9
 START_TIP = 0.0
 END_TIP = 0.0
 
+# Which end the slash sweeps from in the game. False starts at the START end
+# (the one START_RADIUS, TAPER_START and START_TIP describe); True starts at
+# the END end instead. Only the UVs change - the shape stays exactly the same.
+REVERSE_SWEEP = True
+
+# Keeps only one side of the belly, cut straight across at its thickest point,
+# which gives a shark-fin shape that suits a downward chop. None keeps the
+# whole crescent; "START" keeps the START end's side, "END" the END end's side.
+# The kept half sits exactly where it would in the whole crescent, so shape the
+# full crescent first and then pick a half. The belly is WIDTH_AT along the
+# cut, or the middle in SYMMETRIC mode.
+HALF = None
+
 # Segments along the cut. 48 is plenty; more only matters for a very long span.
 SEGMENTS = 48
 
@@ -72,34 +85,50 @@ def width_at(s):
         # halves still thin out the same way, but the curve runs flat through
         # the middle instead of meeting at a corner there.
         return taper(
-            math.pow(1.0 - belly_distance(s), TAPER_START),
-            START_TIP,
-            START_TIP,
-            s)
+            math.pow(1.0 - belly_distance(s), TAPER_START), START_TIP)
 
-    # One curve for the whole band rather than two halves stitched together at
-    # WIDTH_AT: stitching left a kink in the middle of the belly, because the
-    # two pieces met at the same width but at different slopes. Multiplying the
-    # two power curves peaks at WIDTH_AT just the same and stays smooth.
-    # WIDTH_AT 0 means the band never widens: it starts at its thickest and
-    # only tapers, which is the brush-stroke shape.
-    rise = 1.0 if WIDTH_AT <= 0.0 else math.pow(
-        clamp01(s / WIDTH_AT), TAPER_START)
-    fall = math.pow(clamp01((1.0 - s) / max(1.0 - WIDTH_AT, 1e-4)), TAPER_END)
-    return taper(rise * fall, START_TIP, END_TIP, s)
+    # Each side of the belly tapers on its own and keeps its own tip. Letting
+    # one tip's width blend along the whole cut made START_TIP leak into the
+    # tail and fattened it. WIDTH_AT 0 means the band never widens: it starts
+    # at its thickest and only tapers, which is the brush-stroke shape.
+    if s < WIDTH_AT:
+        return taper(side_profile(s / WIDTH_AT, TAPER_START), START_TIP)
+
+    return taper(
+        side_profile((1.0 - s) / max(1.0 - WIDTH_AT, 1e-4), TAPER_END),
+        END_TIP)
 
 
 def clamp01(value):
     return max(0.0, min(1.0, value))
 
 
-def taper(fraction, start_tip, end_tip, s):
-    """Blends the belly profile with the width each tip keeps."""
-    # fraction is 0 at the tips and 1 at the belly, so the tip widths lead at
-    # the ends and WIDTH leads in the middle. A tip above 1 is allowed and
-    # makes that end wider than the belly, like a brush pressed down at the
-    # start of a stroke.
-    tip = start_tip + (end_tip - start_tip) * clamp01(s)
+# How widely the belly is rounded off, as the exponent of the correction term
+# in side_profile. build() picks it: the highest value (tightest rounding,
+# slimmest tails) that still keeps the inner edge bending one way only.
+belly_rounding = 6.0
+
+BELLY_ROUNDING_CANDIDATES = (8.0, 6.0, 4.0, 3.0, 2.0, 1.5, 1.0)
+
+
+def side_profile(t, power):
+    """0 at the tip, 1 at the belly, arriving at the belly with no slope."""
+    t = clamp01(t)
+
+    # t^power alone is the taper, but it reaches the belly still climbing, so
+    # the two sides met at a point and left a kink in the edge there. The
+    # second term cancels that slope right at the belly. A high exponent keeps
+    # it close to the belly so the tips thin exactly as t^power; a low one
+    # spreads the rounding wider, which a band this thick needs - rounded too
+    # tightly, the inner edge dips toward the centre and bulges inwards there.
+    return (math.pow(t, power)
+            + power * (1.0 - t) * math.pow(t, belly_rounding))
+
+
+def taper(fraction, tip):
+    """Blends a 0 (tip) .. 1 (belly) profile with the width the tip keeps."""
+    # A tip above 1 is allowed and makes that end wider than the belly, like a
+    # brush pressed down at the start of a stroke.
     return WIDTH * (tip + (1.0 - tip) * fraction)
 
 
@@ -116,35 +145,108 @@ def radius_at(s):
     return START_RADIUS * math.pow(END_RADIUS / START_RADIUS, s)
 
 
+def kept_range():
+    """The part of the cut, 0..1, that ends up in the mesh."""
+    belly = 0.5 if SYMMETRIC else clamp01(WIDTH_AT)
+
+    if HALF == "START":
+        return 0.0, belly
+
+    if HALF == "END":
+        return belly, 1.0
+
+    return 0.0, 1.0
+
+
+def edge_points(inner, whole=False):
+    """The inner or outer edge of the band, one point per segment."""
+    span = math.radians(SPAN)
+    start = math.radians(CENTER_ANGLE) - span * 0.5
+    first, last = (0.0, 1.0) if whole else kept_range()
+    points = []
+
+    # All SEGMENTS are spent on the kept part, so a half is as smooth as the
+    # whole crescent rather than getting only half the segments.
+    for i in range(SEGMENTS + 1):
+        s = first + (last - first) * i / SEGMENTS
+        angle = start + span * s
+        half = width_at(s) * 0.5
+        radius = radius_at(s) + (-half if inner else half)
+        points.append((radius * math.cos(angle), radius * math.sin(angle)))
+
+    return points
+
+
+# Share of the inner edge's average bend every step must keep. Only forbidding
+# a backward bend still let the belly go nearly straight, which reads as a flat
+# spot just as much as a bulge does.
+MIN_BEND_SHARE = 0.3
+
+
+def inner_edge_flattens():
+    """True when the inner edge goes flat or bends back anywhere."""
+    # Judged on the whole crescent even when only a half is built, so a half
+    # comes out exactly as that part of the whole would.
+    points = edge_points(inner=True, whole=True)
+    turns = []
+
+    for i in range(1, len(points) - 1):
+        ax = points[i][0] - points[i - 1][0]
+        ay = points[i][1] - points[i - 1][1]
+        bx = points[i + 1][0] - points[i][0]
+        by = points[i + 1][1] - points[i][1]
+
+        # The sweep runs counter-clockwise, so every step should turn left:
+        # a positive angle.
+        turns.append(math.atan2(ax * by - ay * bx, ax * bx + ay * by))
+
+    average = sum(turns) / len(turns)
+    return min(turns) < average * MIN_BEND_SHARE
+
+
+def choose_belly_rounding():
+    global belly_rounding
+
+    for candidate in BELLY_ROUNDING_CANDIDATES:
+        belly_rounding = candidate
+
+        if not inner_edge_flattens():
+            return True
+
+    return False
+
+
 def build():
     # Running from edit mode would fail on the selection calls below, and
     # leaving the user's mode changed is worse than switching back.
     if bpy.context.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
 
-    span = math.radians(SPAN)
-    start = math.radians(CENTER_ANGLE) - span * 0.5
+    first, last = kept_range()
 
+    if last - first < 1e-3:
+        print("ERROR: HALF =", repr(HALF), "keeps nothing - the belly sits at "
+              "that end (WIDTH_AT is", WIDTH_AT, "). Move WIDTH_AT or pick "
+              "the other half.")
+        return None
+
+    if not choose_belly_rounding():
+        print("WARNING: the band is too wide for its radius - the inner edge "
+              "still bulges inwards at the belly. Lower WIDTH or raise "
+              "START_RADIUS / END_RADIUS.")
+
+    inner = edge_points(inner=True)
+    outer = edge_points(inner=False)
     verts = []
     faces = []
-    uvs = []
 
     for i in range(SEGMENTS + 1):
-        s = i / SEGMENTS
-        angle = start + span * s
-
-        radius = radius_at(s)
-        half = width_at(s) * 0.5
-
-        cos_a = math.cos(angle)
-        sin_a = math.sin(angle)
-        verts.append(((radius - half) * cos_a, (radius - half) * sin_a, 0.0))
-        verts.append(((radius + half) * cos_a, (radius + half) * sin_a, 0.0))
+        verts.append((inner[i][0], inner[i][1], 0.0))
+        verts.append((outer[i][0], outer[i][1], 0.0))
 
         if i < SEGMENTS:
             base = i * 2
             faces.append((base, base + 2, base + 3, base + 1))
-            uvs.append((s, (i + 1) / SEGMENTS))
 
     mesh = bpy.data.meshes.new(NAME)
     mesh.from_pydata(verts, [], faces)
@@ -155,10 +257,14 @@ def build():
     for poly in mesh.polygons:
         for loop_index in poly.loop_indices:
             index = mesh.loops[loop_index].vertex_index
-            uv_layer.data[loop_index].uv = (
-                (index // 2) / SEGMENTS,
-                float(index % 2),
-            )
+            u = (index // 2) / SEGMENTS
+
+            # The shader sweeps from U 0 to U 1, so flipping U is all it
+            # takes to start the cut from the other end.
+            if REVERSE_SWEEP:
+                u = 1.0 - u
+
+            uv_layer.data[loop_index].uv = (u, float(index % 2))
 
     for existing in list(bpy.data.objects):
         if existing.name == NAME or existing.name.startswith(NAME + "."):
@@ -170,7 +276,8 @@ def build():
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    print(NAME, "rebuilt:", len(mesh.vertices), "verts,", len(mesh.polygons), "faces")
+    print(NAME, "rebuilt:", len(mesh.vertices), "verts,", len(mesh.polygons),
+          "faces, belly rounding", belly_rounding)
     return obj
 
 

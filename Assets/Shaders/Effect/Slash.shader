@@ -37,9 +37,6 @@ Shader "Effect/Slash"
         // SlashEffect sets this per mesh, so the material value is only the
         // fallback.
         [Toggle] _UseMeshUV ("Use Mesh UVs", Float) = 0
-        // Runs the sweep from the other end of the mesh. SlashEffect sets this
-        // per effect, so the material value is only the fallback.
-        [Toggle] _ReverseSweep ("Reverse Sweep", Float) = 0
         // Bounds of the mesh's unwrap as (min U, min V, size U, size V),
         // stretched to 0..1 so the unwrap need not fill the UV square exactly.
         _MeshUVRect ("Mesh UV Rect", Vector) = (0, 0, 1, 1)
@@ -100,7 +97,6 @@ Shader "Effect/Slash"
                 float _NoiseScale;
                 float _UseMeshUV;
                 float4 _MeshUVRect;
-                float _ReverseSweep;
             CBUFFER_END
 
             struct Attributes
@@ -161,11 +157,6 @@ Shader "Effect/Slash"
                     (radius - _InnerRadius) /
                     max(_OuterRadius - _InnerRadius, 1e-4));
                 }
-
-                // Flipping the coordinate rather than the head and tail keeps
-                // the leading edge leading, so a reversed sweep still brightens
-                // where the blade is rather than where it has been.
-                u = lerp(u, 1.0 - u, step(0.5, _ReverseSweep));
 
                 // The lit band runs from tail to head. Both march along the
                 // arc over the effect's lifetime, so the cut is drawn on and

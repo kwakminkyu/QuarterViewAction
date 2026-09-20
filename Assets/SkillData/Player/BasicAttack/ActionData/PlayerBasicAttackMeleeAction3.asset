@@ -20,18 +20,21 @@ MonoBehaviour:
     phases: 3
     mode: 1
     lungeDistance: 0
-    moveSpeedMultiplier: 0.5
+    moveSpeedMultiplier: 0.7
   effects:
   - enabled: 1
     delay: 0
-    mesh: {fileID: -462981019419857548, guid: 4ae0d1210410b2346935f27503de63f4, type: 3}
+    mesh: {fileID: 7702104186388461222, guid: bf9446d9e9752e447aa26e48e87a7d08, type: 3}
+    prefab: {fileID: 0}
+    material: {fileID: 0}
     color: {r: 4, g: 2, b: 1.1, a: 1}
-    duration: 0.27
+    duration: 0.25
     fadeOutDuration: 0.1
-    offset: {x: 0, y: 0.5, z: 0}
+    offset: {x: 0, y: 0.5, z: 0.2}
     scale: {x: 1, y: 1, z: 1}
-    swingPlaneNormal: {x: 0, y: 90, z: 0}
-    localEuler: {x: 0, y: 0, z: -90}
+    swingPlaneNormal: {x: 0, y: 1, z: 0}
+    localEuler: {x: 0, y: 0, z: -110}
+    stayInWorld: 0
     revealSpan: 1
     revealSoftness: 0.2
     scaleCurve:
@@ -58,6 +61,7 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 0
+    scaleCurveAxes: {x: 0, y: 0, z: 0}
     alphaCurve:
       serializedVersion: 2
       m_Curve: []

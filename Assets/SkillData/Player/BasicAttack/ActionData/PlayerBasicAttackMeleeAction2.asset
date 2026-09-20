@@ -24,22 +24,39 @@ MonoBehaviour:
   effects:
   - enabled: 1
     delay: 0
-    mesh: {fileID: -5643857536745811502, guid: a09b27657922306448f1c2916e00ce56, type: 3}
+    mesh: {fileID: -2329454225885326015, guid: b1266b72c5b334140aeadc938941fb9f, type: 3}
     color: {r: 4, g: 2, b: 1.1, a: 1}
     duration: 0.2
     fadeOutDuration: 0.1
-    offset: {x: 0, y: 0.5, z: 0}
+    offset: {x: -0.3, y: 0.6, z: 0}
     scale: {x: 1, y: 1, z: 1}
-    swingPlaneNormal: {x: -1, y: 1, z: 0}
-    localEuler: {x: 0, y: 0, z: -71.77}
-    revealSpan: 0
-    revealSoftness: 0
-    reverseSweep: 1
+    swingPlaneNormal: {x: -0.5, y: 1, z: 0}
+    localEuler: {x: 0, y: 0, z: -110}
+    revealSpan: 1
+    revealSoftness: 0.2
     scaleCurve:
       serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 0
-      m_PostInfinity: 0
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
       m_RotationOrder: 0
     alphaCurve:
       serializedVersion: 2

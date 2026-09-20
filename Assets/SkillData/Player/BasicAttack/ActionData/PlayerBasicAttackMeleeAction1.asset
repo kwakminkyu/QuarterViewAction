@@ -24,17 +24,16 @@ MonoBehaviour:
   effects:
   - enabled: 1
     delay: 0
-    mesh: {fileID: -5643857536745811502, guid: a09b27657922306448f1c2916e00ce56, type: 3}
+    mesh: {fileID: -2329454225885326015, guid: b1266b72c5b334140aeadc938941fb9f, type: 3}
     color: {r: 4, g: 2, b: 1.1, a: 1}
     duration: 0.2
     fadeOutDuration: 0.1
-    offset: {x: 0.3, y: 0.8, z: 0.5}
+    offset: {x: 0.15, y: 0.8, z: 0}
     scale: {x: 1, y: 1, z: 1}
     swingPlaneNormal: {x: 0.5, y: -1, z: 0}
-    localEuler: {x: 0, y: 0, z: -60}
+    localEuler: {x: 0, y: 0, z: -90}
     revealSpan: 1
     revealSoftness: 0.2
-    reverseSweep: 1
     scaleCurve:
       serializedVersion: 2
       m_Curve:

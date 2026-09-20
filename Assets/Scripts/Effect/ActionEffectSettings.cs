@@ -25,6 +25,19 @@ public struct ActionEffectSettings
     // and every clip needed its own trimming pass.
     public Mesh mesh;
 
+    // A particle prefab to play instead of the mesh - a flash, flying debris.
+    // When set it takes over from Mesh and the sweep, colour and curve fields
+    // below do nothing; placement (Delay, Offset, Scale, Swing Plane Normal,
+    // Local Euler) and the lifetime rules still apply. The particles set their
+    // own timing, so Duration and Fade Out Duration are unused too.
+    public GameObject prefab;
+
+    // Draws the mesh with this material instead of the slash prefab's own, for
+    // effects whose look comes from a shader of their own - the shockwave ring
+    // is a flat quad whose band and spikes are drawn entirely by its shader.
+    // Colour, alpha and the effect's progress are still handed to it.
+    public Material material;
+
     [ColorUsage(true, true)] public Color color;
 
     // How long the sweep takes. The effect also ends when the attack's active
@@ -51,6 +64,13 @@ public struct ActionEffectSettings
     // reused mirrored across combo steps.
     public Vector3 localEuler;
 
+    // For effects that belong to the ground rather than the swing - a
+    // shockwave, dust, debris. Once spawned the effect is left to the world:
+    // it stays where it landed instead of following the character, and plays
+    // out its whole Duration however the attack ends - the active window
+    // closing, the skill finishing, or a dash cutting it short.
+    public bool stayInWorld;
+
     // How much of the arc is lit at once, as a fraction of its length. The
     // crescent is drawn by a band that sweeps from the start of the cut to the
     // end, so the tail is revealed first, the head catches up, and the tail
@@ -61,15 +81,19 @@ public struct ActionEffectSettings
     // Softness of the two moving edges, in the same fraction-of-arc units.
     [Range(0f, 0.5f)] public float revealSoftness;
 
-    // Sweeps from the mesh's far end back to its start. The authored mesh fixes
-    // which end the cut begins at, so this is what lets one crescent serve a
-    // combo that swings the other way round without re-exporting it.
-    public bool reverseSweep;
-
     // Evaluated over normalized effect time. Left empty they fall back to the
     // defaults in SlashEffect, which keeps a half-authored asset visible
     // instead of silently invisible.
     public AnimationCurve scaleCurve;
+
+    // Which of the mesh's own axes the scale curve drives: 1 follows the curve,
+    // 0 stays at Scale, anything between follows it partly. All zero - the
+    // value older entries load with - means every axis. The mesh's Z is the
+    // swing plane's normal, so for a ground burst laid with Swing Plane Normal
+    // (0, 1, 0) it points up: (0, 0, 1) makes the burst shoot upwards while
+    // its ring keeps its size.
+    public Vector3 scaleCurveAxes;
+
     public AnimationCurve alphaCurve;
     public AnimationCurve dissolveCurve;
 

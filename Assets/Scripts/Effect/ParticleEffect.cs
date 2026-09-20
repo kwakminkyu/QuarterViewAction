@@ -1,0 +1,127 @@
+using UnityEngine;
+
+// Plays one particle prefab spawned by an action - a flash, flying debris -
+// under the same lifetime rules as a slash: the active window closing stops
+// new particles but lets the ones already out finish; the motion being cut
+// short clears everything at once. Added to the prefab's root, or by the
+// spawner when a prefab lacks it.
+public sealed class ParticleEffect : MonoBehaviour
+{
+    private ParticleSystem[] systems;
+    private CharacterEffectSpawner owner;
+    private Transform followAnchor;
+    private Vector3 followOffset;
+    private bool isPlaying;
+    private bool endsWithSwing;
+
+    // The prefab this instance was made from, so the spawner can hand it back
+    // to the right pool.
+    public GameObject Source { get; private set; }
+
+    private void Awake()
+    {
+        systems = GetComponentsInChildren<ParticleSystem>(true);
+    }
+
+    public void Play(
+        CharacterEffectSpawner spawner,
+        GameObject source,
+        Transform followTarget,
+        bool endsWithSwing)
+    {
+        owner = spawner;
+        Source = source;
+        this.endsWithSwing = endsWithSwing;
+
+        // Position only, as with the slashes: the burst keeps the direction it
+        // was fired in even if the character turns.
+        followAnchor = followTarget;
+        followOffset = followTarget != null
+            ? transform.position - followTarget.position
+            : Vector3.zero;
+
+        isPlaying = true;
+
+        for (int i = 0; i < systems.Length; i++)
+        {
+            // A pooled instance may still hold particles from its last use.
+            systems[i].Clear(false);
+            systems[i].Play(false);
+        }
+    }
+
+    // The attack's active window closed: nothing new is emitted, but particles
+    // already in flight play out. Ground effects ignore it and play in full.
+    public void End()
+    {
+        if (!isPlaying || !endsWithSwing)
+        {
+            return;
+        }
+
+        for (int i = 0; i < systems.Length; i++)
+        {
+            systems[i].Stop(false, ParticleSystemStopBehavior.StopEmitting);
+        }
+    }
+
+    // Left to play out when the attack that spawned it ends; see
+    // ActionEffectSettings.stayInWorld.
+    public bool StaysInWorld => isPlaying && !endsWithSwing;
+
+    // The motion was cut short - nothing it spawned may survive it.
+    public void Cancel()
+    {
+        if (!isPlaying)
+        {
+            return;
+        }
+
+        for (int i = 0; i < systems.Length; i++)
+        {
+            systems[i].Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        Finish();
+    }
+
+    private void LateUpdate()
+    {
+        if (!isPlaying)
+        {
+            return;
+        }
+
+        if (followAnchor != null)
+        {
+            transform.position = followAnchor.position + followOffset;
+        }
+
+        // Finished once every system has run out of particles and emission.
+        for (int i = 0; i < systems.Length; i++)
+        {
+            if (systems[i].IsAlive(false))
+            {
+                return;
+            }
+        }
+
+        Finish();
+    }
+
+    private void Finish()
+    {
+        isPlaying = false;
+        followAnchor = null;
+
+        // A detached effect outlives a destroyed character, so it has to clean
+        // itself up.
+        if (owner == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        owner.Release(this);
+    }
+}

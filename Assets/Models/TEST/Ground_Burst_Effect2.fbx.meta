@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 7e0dcbdeec8d16b4883ae54376d854a2
+guid: 4601c948fdb22d84ab9aca8811102873
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
@@ -43,9 +43,9 @@ ModelImporter:
     preBakeTriangleCollisionMesh: 0
     importPhysicalCameras: 1
     importVisibility: 1
-    importBlendShapes: 0
-    importCameras: 0
-    importLights: 0
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
     nodeNameCollisionStrategy: 1
     fileIdsGeneration: 2
     swapUVChannels: 0
@@ -85,7 +85,7 @@ ModelImporter:
     normalSmoothingSource: 0
     calculateBlendshapeNormalsDeltaFromImportedNormals: 0
   referencedClips: []
-  importAnimation: 0
+  importAnimation: 1
   humanDescription:
     serializedVersion: 3
     human: []
