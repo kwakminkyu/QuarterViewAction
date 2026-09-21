@@ -7,9 +7,12 @@ using UnityEngine;
 // ScriptableObject and must never hold a spawned instance, so
 // CharacterEffectSpawner owns everything with runtime state.
 //
-// The shader derives its arc coordinates from vertex positions, which makes a
-// full ring just a 360 degree arc. That is why a ground shockwave needs no new
-// component or shader - only a ring mesh laid flat and a growing scale curve.
+// An entry plays one of three kinds, and its inspector only shows the fields
+// that kind reads (ActionEffectSettingsDrawer):
+//   - a slash: a UV-mapped mesh swept along by the Slash shader;
+//   - a mesh with its own Material, whose shader draws and animates itself
+//     from the colour, alpha and progress it is handed (shockwave ring, beam);
+//   - a particle Prefab, which brings its own timing and look.
 [Serializable]
 public struct ActionEffectSettings
 {
@@ -17,7 +20,8 @@ public struct ActionEffectSettings
 
     // Seconds after the active phase opens before this one fires. Measured from
     // active enter and allowed to run past it, so an impact can land during the
-    // recovery; the skill ending still cancels whatever is still alive.
+    // recovery; an entry that has not fired by the time the skill ends never
+    // does.
     [Min(0f)] public float delay;
 
     // The shape is modelled rather than derived from the blade. Deriving it
@@ -25,11 +29,10 @@ public struct ActionEffectSettings
     // and every clip needed its own trimming pass.
     public Mesh mesh;
 
-    // A particle prefab to play instead of the mesh - a flash, flying debris.
-    // When set it takes over from Mesh and the sweep, colour and curve fields
-    // below do nothing; placement (Delay, Offset, Scale, Swing Plane Normal,
-    // Local Euler) and the lifetime rules still apply. The particles set their
-    // own timing, so Duration and Fade Out Duration are unused too.
+    // A particle prefab to play instead of the mesh - flying debris, dust.
+    // When set it takes over from Mesh; placement (Delay, Offset, Scale, Swing
+    // Plane Normal, Local Euler) and the lifetime rules still apply, but the
+    // particles bring their own timing and look.
     public GameObject prefab;
 
     // Draws the mesh with this material instead of the slash prefab's own, for
@@ -40,13 +43,13 @@ public struct ActionEffectSettings
 
     [ColorUsage(true, true)] public Color color;
 
-    // How long the sweep takes. The effect also ends when the attack's active
-    // window closes, so a duration longer than that window means the sweep
-    // gets cut off partway by the fade.
+    // How long the effect plays. Unless it stays in the world, it also starts
+    // fading when the attack's active window closes, so a duration longer
+    // than that window gets cut off partway by the fade.
     [Min(0f)] public float duration;
 
-    // Fade applied once the active window closes, matching how the ribbon
-    // behaves. A cancel skips this entirely and kills the effect outright.
+    // Fade applied once the active window closes. A cancel skips it and ends
+    // the effect outright; effects that stay in the world never fade this way.
     [Min(0f)] public float fadeOutDuration;
 
     // Placement, in the user's local frame.
@@ -95,7 +98,6 @@ public struct ActionEffectSettings
     public Vector3 scaleCurveAxes;
 
     public AnimationCurve alphaCurve;
-    public AnimationCurve dissolveCurve;
 
     // Drives the sweep. Left empty it runs linearly, which already reads well;
     // easing it makes the cut snap and the tail linger.

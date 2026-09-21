@@ -40,29 +40,4 @@ public sealed class AreaSkillAction : SkillAction
             position,
             rotation);
     }
-
-    private static Vector3 ResolveDirection(
-        in SkillActionContext context)
-    {
-        Vector3 direction = context.Direction;
-        direction.y = 0f;
-
-        if (direction.sqrMagnitude <= Mathf.Epsilon &&
-            context.Target != null)
-        {
-            direction = context.Target.position -
-                context.User.transform.position;
-            direction.y = 0f;
-        }
-
-        if (direction.sqrMagnitude <= Mathf.Epsilon)
-        {
-            direction = context.User.transform.forward;
-            direction.y = 0f;
-        }
-
-        return direction.sqrMagnitude <= Mathf.Epsilon
-            ? Vector3.forward
-            : direction.normalized;
-    }
 }

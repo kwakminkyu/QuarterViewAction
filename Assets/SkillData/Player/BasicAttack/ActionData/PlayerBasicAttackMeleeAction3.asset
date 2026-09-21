@@ -15,7 +15,7 @@ MonoBehaviour:
   startupDuration: 0.3
   activeDuration: 0.13333334
   recoveryDuration: 0.35
-  recoveryCancelDelay: 0.15
+  recoveryCancelDelay: 0.1
   movementSettings:
     phases: 3
     mode: 1
@@ -63,12 +63,6 @@ MonoBehaviour:
       m_RotationOrder: 0
     scaleCurveAxes: {x: 0, y: 0, z: 0}
     alphaCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 0
-      m_PostInfinity: 0
-      m_RotationOrder: 0
-    dissolveCurve:
       serializedVersion: 2
       m_Curve: []
       m_PreInfinity: 0

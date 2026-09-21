@@ -25,6 +25,8 @@ MonoBehaviour:
   - enabled: 1
     delay: 0
     mesh: {fileID: -2329454225885326015, guid: b1266b72c5b334140aeadc938941fb9f, type: 3}
+    prefab: {fileID: 0}
+    material: {fileID: 0}
     color: {r: 4, g: 2, b: 1.1, a: 1}
     duration: 0.2
     fadeOutDuration: 0.1
@@ -32,6 +34,7 @@ MonoBehaviour:
     scale: {x: 1, y: 1, z: 1}
     swingPlaneNormal: {x: -0.5, y: 1, z: 0}
     localEuler: {x: 0, y: 0, z: -110}
+    stayInWorld: 0
     revealSpan: 1
     revealSoftness: 0.2
     scaleCurve:
@@ -58,13 +61,8 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 0
+    scaleCurveAxes: {x: 0, y: 0, z: 0}
     alphaCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 0
-      m_PostInfinity: 0
-      m_RotationOrder: 0
-    dissolveCurve:
       serializedVersion: 2
       m_Curve: []
       m_PreInfinity: 0

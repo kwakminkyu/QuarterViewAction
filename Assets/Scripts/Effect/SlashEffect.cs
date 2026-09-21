@@ -14,18 +14,10 @@ public sealed class SlashEffect : MonoBehaviour
 
     private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int AlphaId = Shader.PropertyToID("_Alpha");
-    private static readonly int DissolveId = Shader.PropertyToID("_Dissolve");
     private static readonly int HeadId = Shader.PropertyToID("_Head");
     private static readonly int TailId = Shader.PropertyToID("_Tail");
     private static readonly int EdgeSoftnessId =
         Shader.PropertyToID("_EdgeSoftness");
-    private static readonly int ArcCenterId = Shader.PropertyToID("_ArcCenter");
-    private static readonly int ArcSpanId = Shader.PropertyToID("_ArcSpan");
-    private static readonly int InnerRadiusId =
-        Shader.PropertyToID("_InnerRadius");
-    private static readonly int OuterRadiusId =
-        Shader.PropertyToID("_OuterRadius");
-    private static readonly int UseMeshUVId = Shader.PropertyToID("_UseMeshUV");
     private static readonly int MeshUVRectId = Shader.PropertyToID("_MeshUVRect");
 
     // How far through its life the effect is, 0..1, for shaders that animate
@@ -35,9 +27,8 @@ public sealed class SlashEffect : MonoBehaviour
     private static readonly Color DefaultColor =
         new Color(4f, 2.2f, 1f, 1f);
 
-    // Measuring an arc means reading its vertices, which allocates. Meshes are
-    // few and shared, so the result is cached per mesh.
-    private static readonly Dictionary<Mesh, Vector4> ArcCache = new();
+    // Measuring a mesh's unwrap means reading its UVs, which allocates. Meshes
+    // are few and shared, so the result is cached per mesh.
     private static readonly Dictionary<Mesh, Vector4> UnwrapCache = new();
 
     private MeshFilter meshFilter;
@@ -47,6 +38,10 @@ public sealed class SlashEffect : MonoBehaviour
     // The prefab's own material, restored whenever an entry does not bring its
     // own, since pooled instances are reused across entries.
     private Material defaultMaterial;
+
+    // The prefab this instance was made from, so it goes back to the right
+    // pool. Set by EffectPool.
+    public SlashEffect Source { get; internal set; }
 
     private CharacterEffectSpawner owner;
     private ActionEffectSettings settings;
@@ -212,15 +207,17 @@ public sealed class SlashEffect : MonoBehaviour
     {
         Stop();
 
-        // The owner is gone when the character was destroyed mid-swing. A
-        // detached slash outlives its spawner, so it has to clean itself up.
-        if (owner == null)
+        // The character may be gone by now - destroyed mid-swing, or a ground
+        // effect outliving it - and the pool is shared, so the effect can go
+        // back on its own.
+        if (owner != null)
         {
-            Destroy(gameObject);
-            return;
+            owner.Release(this);
         }
-
-        owner.Release(this);
+        else
+        {
+            EffectPool.Return(this);
+        }
     }
 
     private void Apply(float normalizedTime, float fade)
@@ -252,40 +249,27 @@ public sealed class SlashEffect : MonoBehaviour
         float head = Mathf.Lerp(0f, 1f + revealSpan, sweep);
         float tail = head - revealSpan;
 
-        Vector4 unwrap = ResolveUnwrap(settings.mesh);
-        bool useMeshUV = unwrap.z > 0f;
-        Vector4 arc = useMeshUV ? Vector4.zero : ResolveArc(settings.mesh);
-
         meshRenderer.GetPropertyBlock(propertyBlock);
-        propertyBlock.SetFloat(UseMeshUVId, useMeshUV ? 1f : 0f);
-        propertyBlock.SetVector(MeshUVRectId, unwrap);
+        propertyBlock.SetVector(MeshUVRectId, ResolveUnwrap(settings.mesh));
         propertyBlock.SetFloat(ProgressId, normalizedTime);
         propertyBlock.SetColor(ColorId, color);
         propertyBlock.SetFloat(
             AlphaId,
             Evaluate(settings.alphaCurve, normalizedTime, 1f) * fade);
-        propertyBlock.SetFloat(
-            DissolveId,
-            Evaluate(settings.dissolveCurve, normalizedTime, 0f));
         propertyBlock.SetFloat(HeadId, head);
         propertyBlock.SetFloat(TailId, tail);
         propertyBlock.SetFloat(EdgeSoftnessId, revealSoftness);
-        propertyBlock.SetFloat(ArcCenterId, arc.x);
-        propertyBlock.SetFloat(ArcSpanId, arc.y);
-        propertyBlock.SetFloat(InnerRadiusId, arc.z);
-        propertyBlock.SetFloat(OuterRadiusId, arc.w);
         meshRenderer.SetPropertyBlock(propertyBlock);
     }
 
-    // A free-form mesh carries its own unwrap (U along the cut, V inner to
-    // outer); an older flat arc exported without one has every UV at zero and
-    // still needs the coordinates derived from its vertices.
+    // Every effect mesh carries its own unwrap: U along the cut, V inner to
+    // outer.
     //
-    // Returns the unwrap's bounds as (min U, min V, size U, size V), or zero
-    // size when there is none. The shader stretches those bounds to 0..1, so
-    // the unwrap only has to run the right way round - fitting it exactly to
-    // the UV square by hand in Blender is not needed. An unreadable mesh
-    // cannot be inspected and is assumed to already fill 0..1.
+    // Returns the unwrap's bounds as (min U, min V, size U, size V). The shader
+    // stretches those bounds to 0..1, so the unwrap only has to run the right
+    // way round - fitting it exactly to the UV square by hand in Blender is not
+    // needed. An unreadable mesh cannot be inspected and is assumed to already
+    // fill 0..1.
     private static Vector4 ResolveUnwrap(Mesh mesh)
     {
         if (UnwrapCache.TryGetValue(mesh, out Vector4 cached))
@@ -298,25 +282,28 @@ public sealed class SlashEffect : MonoBehaviour
         if (mesh.isReadable)
         {
             Vector2[] uv = mesh.uv;
-            rect = Vector4.zero;
+            Vector2 min = uv.Length > 0 ? uv[0] : Vector2.zero;
+            Vector2 max = min;
 
-            if (uv.Length > 0)
+            for (int i = 1; i < uv.Length; i++)
             {
-                Vector2 min = uv[0];
-                Vector2 max = uv[0];
+                min = Vector2.Min(min, uv[i]);
+                max = Vector2.Max(max, uv[i]);
+            }
 
-                for (int i = 1; i < uv.Length; i++)
-                {
-                    min = Vector2.Min(min, uv[i]);
-                    max = Vector2.Max(max, uv[i]);
-                }
+            Vector2 size = max - min;
 
-                Vector2 size = max - min;
-
-                if (size.x > 1e-3f && size.y > 1e-3f)
-                {
-                    rect = new Vector4(min.x, min.y, size.x, size.y);
-                }
+            if (size.x > 1e-3f && size.y > 1e-3f)
+            {
+                rect = new Vector4(min.x, min.y, size.x, size.y);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "Effect mesh '" + mesh.name + "' has no UV unwrap, so it " +
+                    "cannot be swept. Unwrap it with U along the cut and V " +
+                    "from inner to outer edge.",
+                    mesh);
             }
         }
 
@@ -328,97 +315,6 @@ public sealed class SlashEffect : MonoBehaviour
         }
 
         return rect;
-    }
-
-    // Returns (centre degrees, span degrees, inner radius, outer radius). The
-    // shader needs these to work out how far along the arc a fragment sits
-    // without the mesh carrying a UV unwrap.
-    private static Vector4 ResolveArc(Mesh mesh)
-    {
-        if (ArcCache.TryGetValue(mesh, out Vector4 cached))
-        {
-            return cached;
-        }
-
-        Vector4 arc = new Vector4(180f, 150f, 0.78f, 1f);
-
-        if (mesh.isReadable)
-        {
-            Vector3[] vertices = mesh.vertices;
-
-            if (vertices.Length > 0)
-            {
-                float sumSin = 0f;
-                float sumCos = 0f;
-                float inner = float.MaxValue;
-                float outer = 0f;
-
-                for (int i = 0; i < vertices.Length; i++)
-                {
-                    float angle = Mathf.Atan2(vertices[i].y, vertices[i].x);
-                    sumSin += Mathf.Sin(angle);
-                    sumCos += Mathf.Cos(angle);
-
-                    float radius =
-                        new Vector2(vertices[i].x, vertices[i].y).magnitude;
-
-                    if (radius < inner)
-                    {
-                        inner = radius;
-                    }
-
-                    if (radius > outer)
-                    {
-                        outer = radius;
-                    }
-                }
-
-                float centre =
-                    Mathf.Atan2(sumSin, sumCos) * Mathf.Rad2Deg;
-
-                float minOffset = 0f;
-                float maxOffset = 0f;
-
-                for (int i = 0; i < vertices.Length; i++)
-                {
-                    float angle =
-                        Mathf.Atan2(vertices[i].y, vertices[i].x) *
-                        Mathf.Rad2Deg;
-                    float offset = Mathf.DeltaAngle(centre, angle);
-
-                    if (offset < minOffset)
-                    {
-                        minOffset = offset;
-                    }
-
-                    if (offset > maxOffset)
-                    {
-                        maxOffset = offset;
-                    }
-                }
-
-                arc = new Vector4(
-                    centre,
-                    Mathf.Max(maxOffset - minOffset, 1f),
-                    inner,
-                    Mathf.Max(outer, inner + 1e-4f));
-            }
-        }
-        else
-        {
-            Debug.LogWarning(
-                "Slash mesh '" + mesh.name + "' is not readable, so the arc " +
-                "sweep falls back to defaults. Enable Read/Write on the model " +
-                "importer.",
-                mesh);
-        }
-
-        if (Application.isPlaying)
-        {
-            ArcCache[mesh] = arc;
-        }
-
-        return arc;
     }
 
     private static float Evaluate(

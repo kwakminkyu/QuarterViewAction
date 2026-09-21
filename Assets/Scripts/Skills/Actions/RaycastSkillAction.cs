@@ -53,7 +53,8 @@ public sealed class RaycastSkillAction : SkillAction
         }
     }
 
-    private static Vector3 ResolveDirection(
+    // Keeps the height, so the ray can be cast up or down at a target.
+    protected override Vector3 ResolveDirection(
         in SkillActionContext context)
     {
         Vector3 direction = context.Direction;

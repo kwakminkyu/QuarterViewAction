@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Owns every piece of runtime effect state for one character. SkillAction is a
-// shared asset, so the actions describe what to play and this component is
-// what actually plays it. Monsters get the same behaviour by adding it.
+// Plays one character's effects. SkillAction is a shared asset, so the actions
+// describe what to play and this component places and plays it. The instances
+// themselves come from, live under and go back to the scene's shared
+// EffectPool; this only keeps track of the ones it started, so the skill can
+// end or cancel them. Monsters get the same behaviour by adding it.
 public sealed class CharacterEffectSpawner : MonoBehaviour
 {
     [SerializeField] private SlashEffect slashPrefab;
-    [SerializeField, Min(1)] private int poolSize = 4;
 
     // Origin every effect is placed from and follows for its whole life, and
     // the centre the authored arcs are drawn around. Kept as a transform on the
@@ -16,19 +17,12 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
     [SerializeField] private string effectPivotName = "EffectPivot";
 
     private Transform effectPivot;
-    private Stack<SlashEffect> pool;
-
-    // Particle instances are pooled per prefab, since each one is built from a
-    // different prefab and cannot stand in for another.
-    private readonly Dictionary<GameObject, Stack<ParticleEffect>> particlePools = new();
 
     // Effects have to be reachable after they are handed out so the skill that
     // spawned them can end or cancel them. Without this the effect only ended
     // on its own clock and could outlive the motion.
     private readonly List<SlashEffect> active = new();
     private readonly List<ParticleEffect> activeParticles = new();
-
-    private Transform poolRoot;
 
     private void Awake()
     {
@@ -67,14 +61,12 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
         ResolvePlacement(
             in settings, direction, out Vector3 position, out Quaternion rotation);
 
-        SlashEffect slash = Rent();
-        Transform slashTransform = slash.transform;
-
-        // Never parented to the pivot: that would drag the character's turning
-        // in too. Following is done as a position offset instead, so the swing
-        // plane fixed from the facing at spawn stays put.
-        slashTransform.SetParent(null, false);
-        slashTransform.SetPositionAndRotation(position, rotation);
+        // Lives under the pool's root, never the character: parenting to the
+        // pivot would drag the character's turning in too. Following is done
+        // as a position offset instead, so the swing plane fixed from the
+        // facing at spawn stays put.
+        SlashEffect slash = EffectPool.Rent(slashPrefab);
+        slash.transform.SetPositionAndRotation(position, rotation);
 
         // Tracked for the effect's whole life, otherwise the character lunges
         // away from an effect left hanging where it spawned.
@@ -143,53 +135,17 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
         }
     }
 
+    // Called by an effect this spawner started once it has finished.
     public void Release(SlashEffect slash)
     {
-        if (slash == null)
-        {
-            return;
-        }
-
         active.Remove(slash);
-
-        pool ??= new Stack<SlashEffect>(poolSize);
-
-        if (pool.Count >= poolSize)
-        {
-            Destroy(slash.gameObject);
-            return;
-        }
-
-        slash.transform.SetParent(PoolRoot, false);
-        pool.Push(slash);
+        EffectPool.Return(slash);
     }
 
     public void Release(ParticleEffect particles)
     {
-        if (particles == null)
-        {
-            return;
-        }
-
         activeParticles.Remove(particles);
-
-        if (particles.Source == null ||
-            !particlePools.TryGetValue(particles.Source, out Stack<ParticleEffect> stack))
-        {
-            Destroy(particles.gameObject);
-            return;
-        }
-
-        if (stack.Count >= poolSize)
-        {
-            Destroy(particles.gameObject);
-            return;
-        }
-
-        // Parked inactive so a stopped system cannot be woken by anything else.
-        particles.gameObject.SetActive(false);
-        particles.transform.SetParent(PoolRoot, false);
-        stack.Push(particles);
+        EffectPool.Return(particles);
     }
 
     private void PlayParticles(in ActionEffectSettings settings, Vector3 direction)
@@ -197,10 +153,8 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
         ResolvePlacement(
             in settings, direction, out Vector3 position, out Quaternion rotation);
 
-        ParticleEffect particles = RentParticles(settings.prefab);
+        ParticleEffect particles = EffectPool.Rent(settings.prefab);
         Transform particleTransform = particles.transform;
-
-        particleTransform.SetParent(null, false);
         particleTransform.SetPositionAndRotation(position, rotation);
 
         // Scale only reaches the particles when a system's Scaling Mode is
@@ -210,11 +164,9 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
                 ? settings.scale
                 : Vector3.one;
 
-        particles.gameObject.SetActive(true);
         activeParticles.Add(particles);
         particles.Play(
             this,
-            settings.prefab,
             FollowTargetFor(in settings),
             !settings.stayInWorld);
     }
@@ -307,62 +259,4 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
         return Quaternion.LookRotation(worldNormal, inPlaneAim.normalized);
     }
 
-    private SlashEffect Rent()
-    {
-        pool ??= new Stack<SlashEffect>(poolSize);
-
-        // Pooled entries can be destroyed out from under us when a detached
-        // slash is cleaned up with the scene, so skip the dead ones.
-        while (pool.Count > 0)
-        {
-            SlashEffect pooled = pool.Pop();
-
-            if (pooled != null)
-            {
-                return pooled;
-            }
-        }
-
-        return Instantiate(slashPrefab);
-    }
-
-    private ParticleEffect RentParticles(GameObject prefab)
-    {
-        if (!particlePools.TryGetValue(prefab, out Stack<ParticleEffect> stack))
-        {
-            stack = new Stack<ParticleEffect>(poolSize);
-            particlePools.Add(prefab, stack);
-        }
-
-        while (stack.Count > 0)
-        {
-            ParticleEffect pooled = stack.Pop();
-
-            if (pooled != null)
-            {
-                return pooled;
-            }
-        }
-
-        GameObject created = Instantiate(prefab);
-
-        // A plain particle prefab works too; it just gets the lifetime
-        // handling attached on first use.
-        ParticleEffect particles = created.GetComponent<ParticleEffect>();
-        return particles != null ? particles : created.AddComponent<ParticleEffect>();
-    }
-
-    private Transform PoolRoot
-    {
-        get
-        {
-            if (poolRoot == null)
-            {
-                poolRoot = new GameObject("SlashPool").transform;
-                poolRoot.SetParent(transform, false);
-            }
-
-            return poolRoot;
-        }
-    }
 }

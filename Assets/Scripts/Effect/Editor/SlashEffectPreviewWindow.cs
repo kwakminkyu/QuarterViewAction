@@ -33,11 +33,9 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     private readonly List<SlashEffect> instances = new();
     private Animator animator;
 
-    // Arc guide: a wireframe of a candidate arc band, drawn over the real blade
-    // tip path, so the radius and span a mesh needs can be settled here before
-    // anything is modelled. The arc is always a true circle; the blade path is
-    // the reference it gets fitted against.
-    private const float DefaultBandRatio = 0.78f;
+    // Blade guide: the real blade tip path drawn in the scene, with the point an
+    // effect entry is placed at, so a mesh can be traced over the path in
+    // Blender (Export Blade Path) and checked against it afterwards.
     private const float PathSamplesPerFrame = 4f;
     private const string EffectPivotName = "EffectPivot";
     private const string BladeTipName = "BladeTip";
@@ -45,10 +43,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     private Vector2 scrollPosition;
     private bool showGuide = true;
     private int guideEffectIndex;
-    private float innerRadius = 0.8f;
-    private float outerRadius = 1f;
-    private float arcSpan = 150f;
-    private float arcCenterAngle = 90f;
 
     private Transform effectPivot;
     private Transform bladeTip;
@@ -65,12 +59,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     private bool keepInPlace = true;
     private PlayableGraph poseGraph;
     private AnimationClip poseGraphClip;
-
-    private bool hasFit;
-    private float fitRadiusMin;
-    private float fitRadiusMax;
-    private float fitRadiusMean;
-    private float fitPlaneOffset;
 
     [MenuItem("Tools/Slash Effect Preview")]
     private static void Open()
@@ -179,13 +167,13 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         DrawGuideControls(action);
     }
 
-    // ---- Arc guide -------------------------------------------------------
+    // ---- Blade guide -----------------------------------------------------
 
     private void DrawGuideControls(SkillAction action)
     {
         EditorGUILayout.Space();
         showGuide = EditorGUILayout.ToggleLeft(
-            "Arc Guide (Scene view)", showGuide, EditorStyles.boldLabel);
+            "Blade Guide (Scene view)", showGuide, EditorStyles.boldLabel);
 
         if (!showGuide)
         {
@@ -197,17 +185,15 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         if (count == 0)
         {
             EditorGUILayout.HelpBox(
-                "The guide is drawn in an effect entry's frame, and this " +
-                "action has none.",
+                "The guide is drawn for an effect entry, and this action has " +
+                "none.",
                 MessageType.Info);
             return;
         }
 
         EditorGUILayout.HelpBox(
-            "Yellow: EffectPivot   Cyan: candidate arc band   " +
-            "Red: blade tip over the active window   White: blade tip now.\n" +
-            "Angles are measured in the swing plane, from the entry's in-plane " +
-            "right (0°) toward its in-plane up (90°), before localEuler.",
+            "Yellow: where the entry is placed (EffectPivot + Offset)   " +
+            "Red: blade tip over the active window   White: blade tip now.",
             MessageType.None);
 
         guideEffectIndex = Mathf.Clamp(guideEffectIndex, 0, count - 1);
@@ -218,52 +204,13 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
                 "Effect entry", guideEffectIndex, 0, count - 1);
         }
 
-        EditorGUI.BeginChangeCheck();
-        innerRadius = EditorGUILayout.Slider("Inner radius", innerRadius, 0.01f, 3f);
-        outerRadius = EditorGUILayout.Slider("Outer radius", outerRadius, 0.01f, 3f);
-        arcSpan = EditorGUILayout.Slider("Span (deg)", arcSpan, 1f, 360f);
-        arcCenterAngle = EditorGUILayout.Slider(
-            "Center angle (deg)", arcCenterAngle, -180f, 180f);
-
-        if (EditorGUI.EndChangeCheck())
-        {
-            innerRadius = Mathf.Min(innerRadius, outerRadius - 0.001f);
-            SceneView.RepaintAll();
-        }
-
         ActionEffectSettings settings = action.effects[guideEffectIndex];
 
-        using (new EditorGUI.DisabledScope(!previewing))
+        using (new EditorGUI.DisabledScope(!previewing || bladePathLocal.Count < 2))
         {
-            EditorGUILayout.BeginHorizontal();
-
-            if (GUILayout.Button("Fit to Blade"))
+            if (GUILayout.Button("Export Blade Path (OBJ for Blender)"))
             {
-                Vector3 origin;
-                Quaternion rotation;
-
-                if (TryGetArcFrame(action, out origin, out rotation))
-                {
-                    FitToBlade(origin, rotation);
-                }
-            }
-
-            using (new EditorGUI.DisabledScope(settings.mesh == null))
-            {
-                if (GUILayout.Button("From Current Mesh"))
-                {
-                    LoadFromMesh(in settings);
-                }
-            }
-
-            EditorGUILayout.EndHorizontal();
-
-            using (new EditorGUI.DisabledScope(bladePathLocal.Count < 2))
-            {
-                if (GUILayout.Button("Export Blade Path (OBJ for Blender)"))
-                {
-                    ExportBladePath(action, in settings);
-                }
+                ExportBladePath(action, in settings);
             }
         }
 
@@ -272,67 +219,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             EditorGUILayout.HelpBox(
                 "Start the preview to draw the guide and sample the blade.",
                 MessageType.Info);
-        }
-
-        if (hasFit)
-        {
-            EditorGUILayout.LabelField(
-                "  blade tip radius",
-                fitRadiusMin.ToString("F3") + " .. " + fitRadiusMax.ToString("F3") +
-                " m  (mean " + fitRadiusMean.ToString("F3") + ")");
-            EditorGUILayout.LabelField(
-                "  off swing plane",
-                "up to " + fitPlaneOffset.ToString("F3") + " m");
-        }
-
-        EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Blender (model at Unity scale 1)", EditorStyles.boldLabel);
-        EditorGUILayout.SelectableLabel(
-            "inner R " + innerRadius.ToString("F3") +
-            "   outer R " + outerRadius.ToString("F3") +
-            "   span " + arcSpan.ToString("F1") + "°   (symmetric about +X)",
-            GUILayout.Height(EditorGUIUtility.singleLineHeight));
-
-        // Unity's FBX import mirrors X, so an arc built around Blender +X lands
-        // centred on 180° in the mesh's local plane.
-        float eulerZ = Mathf.DeltaAngle(0f, arcCenterAngle - 180f);
-
-        EditorGUILayout.LabelField("Unity", EditorStyles.boldLabel);
-        EditorGUILayout.SelectableLabel(
-            "localEuler.z " + eulerZ.ToString("F1") +
-            "   (current " + settings.localEuler.z.ToString("F1") + ")",
-            GUILayout.Height(EditorGUIUtility.singleLineHeight));
-
-        if (Mathf.Abs(settings.localEuler.x) > 0.01f ||
-            Mathf.Abs(settings.localEuler.y) > 0.01f)
-        {
-            EditorGUILayout.HelpBox(
-                "This entry's localEuler has X/Y rotation, which tilts the mesh " +
-                "out of the plane the guide is drawn in.",
-                MessageType.Warning);
-        }
-
-        Vector3 scale = settings.scale;
-
-        if (scale.sqrMagnitude > Mathf.Epsilon &&
-            (scale - Vector3.one).sqrMagnitude > 1e-6f)
-        {
-            EditorGUILayout.HelpBox(
-                "This entry's scale is " + scale.ToString("F3") + ". The radii " +
-                "above are final sizes, so bake them into the mesh and set " +
-                "scale back to 1.",
-                MessageType.Info);
-        }
-
-        if (GUILayout.Button("Apply localEuler.z to entry " + guideEffectIndex))
-        {
-            Undo.RecordObject(action, "Apply Arc Guide Rotation");
-            ActionEffectSettings[] effects = action.effects;
-            ActionEffectSettings edited = effects[guideEffectIndex];
-            edited.localEuler = new Vector3(
-                edited.localEuler.x, edited.localEuler.y, eulerZ);
-            effects[guideEffectIndex] = edited;
-            EditorUtility.SetDirty(action);
         }
     }
 
@@ -348,27 +234,24 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         Vector3 origin;
         Quaternion rotation;
 
-        if (action == null || !TryGetArcFrame(action, out origin, out rotation))
+        if (action == null || !TryGetEffectFrame(action, out origin, out rotation))
         {
             return;
         }
 
-        // ① Pivot, plus a spoke to the arc centre so the angle reads at a glance.
+        // Where the entry is placed. The offset moves it off the pivot itself;
+        // show both so a leftover offset is not mistaken for the pivot.
         Handles.color = Color.yellow;
         float pivotSize = HandleUtility.GetHandleSize(origin) * 0.08f;
         Handles.SphereHandleCap(0, origin, Quaternion.identity, pivotSize, EventType.Repaint);
-        Handles.DrawDottedLine(
-            origin, ArcPoint(origin, rotation, arcCenterAngle, outerRadius), 3f);
 
-        // The entry's offset moves the arc centre off the pivot itself; show
-        // both so a leftover offset is not mistaken for the pivot position.
         Vector3 pivot = effectPivot != null
             ? effectPivot.position
             : player.transform.position;
 
         if ((pivot - origin).sqrMagnitude > 1e-6f)
         {
-            Handles.Label(origin, "arc centre (pivot + offset)");
+            Handles.Label(origin, "effect origin (pivot + offset)");
             Handles.DrawDottedLine(pivot, origin, 2f);
             Handles.SphereHandleCap(
                 0, pivot, Quaternion.identity, pivotSize, EventType.Repaint);
@@ -379,25 +262,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             Handles.Label(origin, "EffectPivot");
         }
 
-        // ② Arc band outline.
-        float start = arcCenterAngle - arcSpan * 0.5f;
-        float end = arcCenterAngle + arcSpan * 0.5f;
-        Handles.color = Color.cyan;
-        Handles.DrawAAPolyLine(3f, ArcPolyline(origin, rotation, start, end, innerRadius));
-        Handles.DrawAAPolyLine(3f, ArcPolyline(origin, rotation, start, end, outerRadius));
-        Handles.DrawAAPolyLine(3f,
-            ArcPoint(origin, rotation, start, innerRadius),
-            ArcPoint(origin, rotation, start, outerRadius));
-        Handles.DrawAAPolyLine(3f,
-            ArcPoint(origin, rotation, end, innerRadius),
-            ArcPoint(origin, rotation, end, outerRadius));
-
-        // Faint full circle, so the blade's in-and-out drift against a true
-        // radius is visible outside the span as well.
-        Handles.color = new Color(0f, 1f, 1f, 0.2f);
-        Handles.DrawWireDisc(origin, rotation * Vector3.forward, outerRadius);
-
-        // ③ Blade tip path across the active window.
+        // Blade tip path across the active window.
         if (bladePathLocal.Count > 1)
         {
             var path = new Vector3[bladePathLocal.Count];
@@ -411,7 +276,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             Handles.DrawAAPolyLine(4f, path);
         }
 
-        // ④ Blade tip on the current frame.
+        // Blade tip on the current frame.
         if (bladeTip != null)
         {
             Handles.color = Color.white;
@@ -424,7 +289,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
     // The frame the runtime lays an entry's mesh into, before localEuler:
     // local XY is the swing plane, local Z its normal.
-    private bool TryGetArcFrame(
+    private bool TryGetEffectFrame(
         SkillAction action,
         out Vector3 origin,
         out Quaternion rotation)
@@ -465,63 +330,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         return true;
     }
 
-    // Projects the sampled tip path into the arc frame and takes the circle
-    // that covers it: angular extent for the span, mean distance for the radius.
-    private void FitToBlade(Vector3 origin, Quaternion rotation)
-    {
-        if (bladePathLocal.Count < 2)
-        {
-            return;
-        }
-
-        Quaternion toFrame = Quaternion.Inverse(rotation);
-        int n = bladePathLocal.Count;
-        var angles = new float[n];
-        float sumSin = 0f;
-        float sumCos = 0f;
-        float sumRadius = 0f;
-
-        fitRadiusMin = float.MaxValue;
-        fitRadiusMax = 0f;
-        fitPlaneOffset = 0f;
-
-        for (int i = 0; i < n; i++)
-        {
-            Vector3 world = player.transform.TransformPoint(bladePathLocal[i]);
-            Vector3 local = toFrame * (world - origin);
-            float radius = new Vector2(local.x, local.y).magnitude;
-
-            angles[i] = Mathf.Atan2(local.y, local.x) * Mathf.Rad2Deg;
-            sumSin += Mathf.Sin(angles[i] * Mathf.Deg2Rad);
-            sumCos += Mathf.Cos(angles[i] * Mathf.Deg2Rad);
-            sumRadius += radius;
-
-            fitRadiusMin = Mathf.Min(fitRadiusMin, radius);
-            fitRadiusMax = Mathf.Max(fitRadiusMax, radius);
-            fitPlaneOffset = Mathf.Max(fitPlaneOffset, Mathf.Abs(local.z));
-        }
-
-        float mean = Mathf.Atan2(sumSin, sumCos) * Mathf.Rad2Deg;
-        float minOffset = 0f;
-        float maxOffset = 0f;
-
-        for (int i = 0; i < n; i++)
-        {
-            float offset = Mathf.DeltaAngle(mean, angles[i]);
-            minOffset = Mathf.Min(minOffset, offset);
-            maxOffset = Mathf.Max(maxOffset, offset);
-        }
-
-        fitRadiusMean = sumRadius / n;
-        arcCenterAngle = Mathf.DeltaAngle(0f, mean + (minOffset + maxOffset) * 0.5f);
-        arcSpan = Mathf.Clamp(maxOffset - minOffset, 1f, 360f);
-        outerRadius = fitRadiusMean;
-        innerRadius = outerRadius * DefaultBandRatio;
-        hasFit = true;
-
-        SceneView.RepaintAll();
-    }
-
     // Writes the red path in the space of the mesh this entry will draw with,
     // so a band traced over it in Blender drops in with no further placement:
     // offset, swing plane, localEuler and scale are all undone here.
@@ -557,7 +365,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         Quaternion rotation;
 
         if (bladePathLocal.Count < 2 ||
-            !TryGetArcFrame(action, out origin, out rotation))
+            !TryGetEffectFrame(action, out origin, out rotation))
         {
             return false;
         }
@@ -595,31 +403,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         obj.AppendLine();
         System.IO.File.WriteAllText(path, obj.ToString());
         return true;
-    }
-
-    // Starts the sliders from the mesh already assigned, read the same way the
-    // shader reads it, so a revision can be judged against what exists.
-    private void LoadFromMesh(in ActionEffectSettings settings)
-    {
-        MethodInfo resolve = typeof(SlashEffect).GetMethod(
-            "ResolveArc", BindingFlags.NonPublic | BindingFlags.Static);
-
-        if (resolve == null || settings.mesh == null)
-        {
-            return;
-        }
-
-        var arc = (Vector4)resolve.Invoke(null, new object[] { settings.mesh });
-        float scale = settings.scale.sqrMagnitude > Mathf.Epsilon
-            ? settings.scale.x
-            : 1f;
-
-        arcCenterAngle = Mathf.DeltaAngle(0f, arc.x + settings.localEuler.z);
-        arcSpan = arc.y;
-        innerRadius = arc.z * scale;
-        outerRadius = arc.w * scale;
-
-        SceneView.RepaintAll();
     }
 
     // Poses the clip across the active window once and keeps the tip positions,
@@ -722,29 +505,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
                 bladeTip = child;
             }
         }
-    }
-
-    private static Vector3 ArcPoint(
-        Vector3 origin, Quaternion rotation, float degrees, float radius)
-    {
-        float radians = degrees * Mathf.Deg2Rad;
-        return origin + rotation *
-            new Vector3(Mathf.Cos(radians), Mathf.Sin(radians), 0f) * radius;
-    }
-
-    private static Vector3[] ArcPolyline(
-        Vector3 origin, Quaternion rotation, float from, float to, float radius)
-    {
-        int segments = Mathf.Max(2, Mathf.CeilToInt(Mathf.Abs(to - from) / 3f));
-        var points = new Vector3[segments + 1];
-
-        for (int i = 0; i <= segments; i++)
-        {
-            points[i] = ArcPoint(
-                origin, rotation, Mathf.Lerp(from, to, (float)i / segments), radius);
-        }
-
-        return points;
     }
 
     // Shows where the effect's own window sits inside the attack. A duration
@@ -851,7 +611,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         }
 
         instances.Clear();
-        ClearSpawnerState();
         previewing = false;
 
         // The pose the path was sampled from is gone, and the next preview may
@@ -861,7 +620,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         DestroyPoseGraph();
         effectPivot = null;
         bladeTip = null;
-        hasFit = false;
     }
 
     private void Apply(SkillAction action, AnimationClip clip)
@@ -880,7 +638,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
         CharacterEffectSpawner spawner =
             player.GetComponent<CharacterEffectSpawner>();
-        ClearSpawnerState();
 
         // An action can fire several effects at different delays, so the
         // preview needs one instance per entry rather than a single one.
@@ -915,21 +672,21 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
                 continue;
             }
 
-            // Seed the pool so the spawner hands back this pre-warmed instance
-            // rather than instantiating one whose Awake would never have run.
-            var pool = new Stack<SlashEffect>();
-            pool.Push(instance);
-            Field(typeof(CharacterEffectSpawner), "pool").SetValue(spawner, pool);
-
-            // The real placement path, so the preview cannot drift from runtime.
-            spawner.PlaySlash(in settings, player.transform.forward);
+            // The spawner's own placement, so the preview cannot drift from
+            // runtime. Only the maths is borrowed: going through PlaySlash
+            // would rent from the shared EffectPool and build its Effects root
+            // in the edited scene.
+            var placement = new object[] { settings, player.transform.forward, null, null };
+            Method(typeof(CharacterEffectSpawner), "ResolvePlacement")
+                .Invoke(spawner, placement);
+            instance.transform.SetPositionAndRotation(
+                (Vector3)placement[2], (Quaternion)placement[3]);
+            instance.Play(null, in settings, null);
 
             renderer.enabled = true;
             Method(typeof(SlashEffect), "Apply")
                 .Invoke(instance, new object[] { normalized, 1f });
         }
-
-        ClearSpawnerState();
 
         // No Repaint() here - this can run from inside a repaint, and
         // OnInspectorUpdate already keeps the window ticking.
@@ -961,27 +718,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
             instances.RemoveAt(last);
         }
-    }
-
-    private void ClearSpawnerState()
-    {
-        if (player == null)
-        {
-            return;
-        }
-
-        CharacterEffectSpawner spawner =
-            player.GetComponent<CharacterEffectSpawner>();
-
-        if (spawner == null)
-        {
-            return;
-        }
-
-        var active = (List<SlashEffect>)
-            Field(typeof(CharacterEffectSpawner), "active").GetValue(spawner);
-
-        active?.Clear();
     }
 
     private static FieldInfo Field(System.Type type, string name)

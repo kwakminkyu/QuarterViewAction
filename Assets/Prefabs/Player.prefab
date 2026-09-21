@@ -1473,7 +1473,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterEffectSpawner
   slashPrefab: {fileID: 2397947463953987162, guid: 47e7f0b8ff7654049808c47bd62a168f, type: 3}
-  poolSize: 6
   effectPivotName: EffectPivot
 --- !u!1 &9200434211284593741
 GameObject:

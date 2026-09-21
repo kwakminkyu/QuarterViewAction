@@ -1,10 +1,10 @@
 using UnityEngine;
 
-// Plays one particle prefab spawned by an action - a flash, flying debris -
+// Plays one particle prefab spawned by an action - flying debris, dust -
 // under the same lifetime rules as a slash: the active window closing stops
 // new particles but lets the ones already out finish; the motion being cut
-// short clears everything at once. Added to the prefab's root, or by the
-// spawner when a prefab lacks it.
+// short clears everything at once. Added to the prefab's root, or by
+// EffectPool when a prefab lacks it.
 public sealed class ParticleEffect : MonoBehaviour
 {
     private ParticleSystem[] systems;
@@ -14,9 +14,9 @@ public sealed class ParticleEffect : MonoBehaviour
     private bool isPlaying;
     private bool endsWithSwing;
 
-    // The prefab this instance was made from, so the spawner can hand it back
-    // to the right pool.
-    public GameObject Source { get; private set; }
+    // The prefab this instance was made from, so it goes back to the right
+    // pool. Set by EffectPool.
+    public GameObject Source { get; internal set; }
 
     private void Awake()
     {
@@ -25,12 +25,10 @@ public sealed class ParticleEffect : MonoBehaviour
 
     public void Play(
         CharacterEffectSpawner spawner,
-        GameObject source,
         Transform followTarget,
         bool endsWithSwing)
     {
         owner = spawner;
-        Source = source;
         this.endsWithSwing = endsWithSwing;
 
         // Position only, as with the slashes: the burst keeps the direction it
@@ -114,14 +112,15 @@ public sealed class ParticleEffect : MonoBehaviour
         isPlaying = false;
         followAnchor = null;
 
-        // A detached effect outlives a destroyed character, so it has to clean
-        // itself up.
-        if (owner == null)
+        // The character may be gone by now - a ground effect outlives it - and
+        // the pool is shared, so the effect can go back on its own.
+        if (owner != null)
         {
-            Destroy(gameObject);
-            return;
+            owner.Release(this);
         }
-
-        owner.Release(this);
+        else
+        {
+            EffectPool.Return(this);
+        }
     }
 }

@@ -22,46 +22,17 @@ Material:
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs:
-    - _DissolveTex:
-        m_Texture: {fileID: 2800000, guid: 3a600eead59757149b9c4777671b74db, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _SlashTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
+    m_TexEnvs: []
     m_Ints: []
     m_Floats:
     - _Alpha: 1
-    - _ArcAngle: 200
-    - _ArcCenter: 180
-    - _ArcRadius: 0.38
-    - _ArcRotation: 0
-    - _ArcSpan: 150
-    - _CoreWidth: 0.3
-    - _Dissolve: 0
     - _EdgeSoftness: 0.12
-    - _EdgeWidth: 0.12
     - _Head: 1
-    - _HeadFade: 0.12
-    - _HeadTaper: 0.12
-    - _InnerGlow: 0.6
-    - _InnerRadius: 0.78
-    - _NoiseAmount: 0.45
-    - _NoiseScale: 2
     - _OuterBias: 1.6
-    - _OuterRadius: 1
-    - _SweepFromTail: 1
     - _Tail: 0
-    - _TailFade: 0.35
-    - _TailTaper: 0.7
-    - _Thickness: 0.12
-    - _UseMeshUV: 0
-    - _UseTex: 0
-    - _UseUV: 0
     m_Colors:
     - _Color: {r: 4, g: 2.2, b: 1, a: 1}
     - _EdgeColor: {r: 8, g: 3, b: 1, a: 1}
+    - _MeshUVRect: {r: 0, g: 0, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

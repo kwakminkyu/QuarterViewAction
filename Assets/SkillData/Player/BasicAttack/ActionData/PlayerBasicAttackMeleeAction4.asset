@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
   startupDuration: 0.53333336
   activeDuration: 0.13333334
-  recoveryDuration: 0.13333334
-  recoveryCancelDelay: 0.2
+  recoveryDuration: 0.2333333
+  recoveryCancelDelay: 0.1
   movementSettings:
     phases: 1
     mode: 1
@@ -104,12 +104,6 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    dissolveCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
     revealCurve:
       serializedVersion: 2
       m_Curve:
@@ -162,12 +156,6 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    dissolveCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
     revealCurve:
       serializedVersion: 2
       m_Curve: []
@@ -197,12 +185,6 @@ MonoBehaviour:
       m_RotationOrder: 4
     scaleCurveAxes: {x: 0, y: 0, z: 0}
     alphaCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    dissolveCurve:
       serializedVersion: 2
       m_Curve: []
       m_PreInfinity: 2

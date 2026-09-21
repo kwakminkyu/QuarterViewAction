@@ -65,7 +65,7 @@ public abstract class SkillAction : ScriptableObject
             case SkillMovementMode.FixedLunge:
                 ApplyLunge(
                     in context,
-                    ResolveDirection(in context),
+                    ResolveFlatDirection(in context),
                     movementSettings.lungeDistance,
                     phaseDuration);
                 break;
@@ -93,7 +93,16 @@ public abstract class SkillAction : ScriptableObject
     {
     }
 
-    protected static Vector3 ResolveDirection(in SkillActionContext context)
+    // Direction the action aims its attack. Flat by default; actions that aim
+    // in 3D, such as projectiles and raycasts, override it to keep the height.
+    protected virtual Vector3 ResolveDirection(in SkillActionContext context)
+    {
+        return ResolveFlatDirection(in context);
+    }
+
+    // Direction the character itself moves in. Always flat, whatever the
+    // attack aims at, so a lunge never lifts the character off the ground.
+    private static Vector3 ResolveFlatDirection(in SkillActionContext context)
     {
         Vector3 direction = context.Direction;
         direction.y = 0f;
