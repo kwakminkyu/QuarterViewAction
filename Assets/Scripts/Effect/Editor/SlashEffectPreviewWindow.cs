@@ -33,27 +33,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     private readonly List<SlashEffect> instances = new();
     private Animator animator;
 
-    // Blade guide: the real blade tip path drawn in the scene, with the point an
-    // effect entry is placed at, so a mesh can be traced over the path in
-    // Blender (Export Blade Path) and checked against it afterwards.
-    private const float PathSamplesPerFrame = 4f;
-    private const string EffectPivotName = "EffectPivot";
-    private const string BladeTipName = "BladeTip";
-
     private Vector2 scrollPosition;
-    private bool showGuide = true;
-    private int guideEffectIndex;
-
-    private Transform effectPivot;
-    private Transform bladeTip;
-
-    // Sampled once per combo and timing, in the player's local space so a
-    // rotated player does not invalidate it.
-    private readonly List<Vector3> bladePathLocal = new();
-    private int cachedPathCombo = -1;
-    private float cachedPathStart = -1f;
-    private float cachedPathEnd = -1f;
-    private bool cachedPathInPlace;
 
     // On by default so the preview matches play, where root motion is off.
     private bool keepInPlace = true;
@@ -68,13 +48,65 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
     private void OnEnable()
     {
-        SceneView.duringSceneGui += OnSceneGUI;
+        SceneView.duringSceneGui += DrawHitbox;
     }
 
     private void OnDisable()
     {
-        SceneView.duringSceneGui -= OnSceneGUI;
+        SceneView.duringSceneGui -= DrawHitbox;
         StopPreview();
+    }
+
+    // Draws the combo's hit volume where OverlapSkillAction puts it, so it
+    // can be matched against the effect by eye. Red while the attack is
+    // active and actually hitting, grey outside that window.
+    private void DrawHitbox(SceneView view)
+    {
+        if (!previewing || player == null || Event.current.type != EventType.Repaint)
+        {
+            return;
+        }
+
+        var action = LoadAction(comboIndex) as OverlapSkillAction;
+
+        if (action == null || action.attackData == null)
+        {
+            return;
+        }
+
+        // Same placement as OverlapSkillAction: the flat facing, then the
+        // centre offset in that frame from the character's root.
+        Vector3 facing = player.transform.forward;
+        facing.y = 0f;
+        facing = facing.sqrMagnitude > Mathf.Epsilon ? facing.normalized : Vector3.forward;
+        Quaternion rotation = Quaternion.LookRotation(facing, Vector3.up);
+        Vector3 centre = player.transform.position + rotation * action.centerOffset;
+
+        float activeStart = action.startupDuration * ClipFrameRate;
+        float activeEnd = activeStart + action.activeDuration * ClipFrameRate;
+        bool active = frame >= activeStart && frame <= activeEnd;
+
+        Color previous = Handles.color;
+        Matrix4x4 previousMatrix = Handles.matrix;
+        Handles.color = active ? new Color(1f, 0.2f, 0.2f, 1f) : new Color(0.6f, 0.6f, 0.6f, 0.6f);
+        Handles.matrix = Matrix4x4.TRS(centre, rotation, Vector3.one);
+
+        OverlapAttackData data = action.attackData;
+
+        if (data.shape == OverlapShape.Box)
+        {
+            Handles.DrawWireCube(Vector3.zero, data.boxSize);
+        }
+        else
+        {
+            Handles.DrawWireDisc(Vector3.zero, Vector3.up, data.radius);
+            Handles.DrawWireDisc(Vector3.zero, Vector3.right, data.radius);
+            Handles.DrawWireDisc(Vector3.zero, Vector3.forward, data.radius);
+        }
+
+        Handles.matrix = previousMatrix;
+        Handles.Label(centre, active ? "hitbox (active)" : "hitbox");
+        Handles.color = previous;
     }
 
     // Tuning means editing the action asset while watching this window, so it
@@ -163,287 +195,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         {
             Apply(action, clip);
         }
-
-        DrawGuideControls(action);
-    }
-
-    // ---- Blade guide -----------------------------------------------------
-
-    private void DrawGuideControls(SkillAction action)
-    {
-        EditorGUILayout.Space();
-        showGuide = EditorGUILayout.ToggleLeft(
-            "Blade Guide (Scene view)", showGuide, EditorStyles.boldLabel);
-
-        if (!showGuide)
-        {
-            return;
-        }
-
-        int count = action.effects == null ? 0 : action.effects.Length;
-
-        if (count == 0)
-        {
-            EditorGUILayout.HelpBox(
-                "The guide is drawn for an effect entry, and this action has " +
-                "none.",
-                MessageType.Info);
-            return;
-        }
-
-        EditorGUILayout.HelpBox(
-            "Yellow: where the entry is placed (EffectPivot + Offset)   " +
-            "Red: blade tip over the active window   White: blade tip now.",
-            MessageType.None);
-
-        guideEffectIndex = Mathf.Clamp(guideEffectIndex, 0, count - 1);
-
-        if (count > 1)
-        {
-            guideEffectIndex = EditorGUILayout.IntSlider(
-                "Effect entry", guideEffectIndex, 0, count - 1);
-        }
-
-        ActionEffectSettings settings = action.effects[guideEffectIndex];
-
-        using (new EditorGUI.DisabledScope(!previewing || bladePathLocal.Count < 2))
-        {
-            if (GUILayout.Button("Export Blade Path (OBJ for Blender)"))
-            {
-                ExportBladePath(action, in settings);
-            }
-        }
-
-        if (!previewing)
-        {
-            EditorGUILayout.HelpBox(
-                "Start the preview to draw the guide and sample the blade.",
-                MessageType.Info);
-        }
-    }
-
-    private void OnSceneGUI(SceneView view)
-    {
-        if (!previewing || !showGuide || player == null ||
-            Event.current.type != EventType.Repaint)
-        {
-            return;
-        }
-
-        SkillAction action = LoadAction(comboIndex);
-        Vector3 origin;
-        Quaternion rotation;
-
-        if (action == null || !TryGetEffectFrame(action, out origin, out rotation))
-        {
-            return;
-        }
-
-        // Where the entry is placed. The offset moves it off the pivot itself;
-        // show both so a leftover offset is not mistaken for the pivot.
-        Handles.color = Color.yellow;
-        float pivotSize = HandleUtility.GetHandleSize(origin) * 0.08f;
-        Handles.SphereHandleCap(0, origin, Quaternion.identity, pivotSize, EventType.Repaint);
-
-        Vector3 pivot = effectPivot != null
-            ? effectPivot.position
-            : player.transform.position;
-
-        if ((pivot - origin).sqrMagnitude > 1e-6f)
-        {
-            Handles.Label(origin, "effect origin (pivot + offset)");
-            Handles.DrawDottedLine(pivot, origin, 2f);
-            Handles.SphereHandleCap(
-                0, pivot, Quaternion.identity, pivotSize, EventType.Repaint);
-            Handles.Label(pivot, "EffectPivot");
-        }
-        else
-        {
-            Handles.Label(origin, "EffectPivot");
-        }
-
-        // Blade tip path across the active window.
-        if (bladePathLocal.Count > 1)
-        {
-            var path = new Vector3[bladePathLocal.Count];
-
-            for (int i = 0; i < path.Length; i++)
-            {
-                path[i] = player.transform.TransformPoint(bladePathLocal[i]);
-            }
-
-            Handles.color = Color.red;
-            Handles.DrawAAPolyLine(4f, path);
-        }
-
-        // Blade tip on the current frame.
-        if (bladeTip != null)
-        {
-            Handles.color = Color.white;
-            Handles.SphereHandleCap(
-                0, bladeTip.position, Quaternion.identity,
-                HandleUtility.GetHandleSize(bladeTip.position) * 0.06f,
-                EventType.Repaint);
-        }
-    }
-
-    // The frame the runtime lays an entry's mesh into, before localEuler:
-    // local XY is the swing plane, local Z its normal.
-    private bool TryGetEffectFrame(
-        SkillAction action,
-        out Vector3 origin,
-        out Quaternion rotation)
-    {
-        origin = Vector3.zero;
-        rotation = Quaternion.identity;
-
-        int count = action.effects == null ? 0 : action.effects.Length;
-        CharacterEffectSpawner spawner =
-            player == null ? null : player.GetComponent<CharacterEffectSpawner>();
-
-        if (count == 0 || spawner == null)
-        {
-            return false;
-        }
-
-        ResolveGuideTransforms();
-
-        ActionEffectSettings settings =
-            action.effects[Mathf.Clamp(guideEffectIndex, 0, count - 1)];
-
-        // Same flattening PlaySlash applies to the direction it is handed.
-        Vector3 facing = player.transform.forward;
-        facing.y = 0f;
-        facing = facing.sqrMagnitude > Mathf.Epsilon
-            ? facing.normalized
-            : Vector3.forward;
-
-        Vector3 pivot = effectPivot != null
-            ? effectPivot.position
-            : player.transform.position;
-        origin = pivot + Quaternion.LookRotation(facing, Vector3.up) * settings.offset;
-
-        rotation = (Quaternion)Method(
-                typeof(CharacterEffectSpawner), "ResolveSwingPlaneRotation")
-            .Invoke(spawner, new object[] { facing, settings });
-
-        return true;
-    }
-
-    // Writes the red path in the space of the mesh this entry will draw with,
-    // so a band traced over it in Blender drops in with no further placement:
-    // offset, swing plane, localEuler and scale are all undone here.
-    //
-    // Unity mirrors X when importing a Blender FBX, so X is negated going out.
-    // Blender's OBJ importer then maps OBJ (x, y, z) to Blender (x, -z, y) with
-    // its default axes, hence the reordering below.
-    private void ExportBladePath(SkillAction action, in ActionEffectSettings settings)
-    {
-        string folder = System.IO.Path.GetFullPath(
-            System.IO.Path.Combine(Application.dataPath, "..", "BladePaths"));
-        System.IO.Directory.CreateDirectory(folder);
-
-        string path = EditorUtility.SaveFilePanel(
-            "Export Blade Path",
-            folder,
-            "Combo" + comboIndex + "_Effect" + guideEffectIndex + "_BladePath",
-            "obj");
-
-        if (!string.IsNullOrEmpty(path) &&
-            WriteBladePathObj(action, in settings, path))
-        {
-            Debug.Log("Blade path written to " + path);
-        }
-    }
-
-    private bool WriteBladePathObj(
-        SkillAction action,
-        in ActionEffectSettings settings,
-        string path)
-    {
-        Vector3 origin;
-        Quaternion rotation;
-
-        if (bladePathLocal.Count < 2 ||
-            !TryGetEffectFrame(action, out origin, out rotation))
-        {
-            return false;
-        }
-
-        Quaternion toMesh = Quaternion.Inverse(
-            rotation * Quaternion.Euler(settings.localEuler));
-        Vector3 scale = settings.scale.sqrMagnitude > Mathf.Epsilon
-            ? settings.scale
-            : Vector3.one;
-        var culture = System.Globalization.CultureInfo.InvariantCulture;
-        var obj = new System.Text.StringBuilder();
-
-        obj.AppendLine("# Blade tip path, combo " + comboIndex +
-            ", in the mesh space of effect " + guideEffectIndex);
-        obj.AppendLine("o BladePath_Combo" + comboIndex);
-
-        for (int i = 0; i < bladePathLocal.Count; i++)
-        {
-            Vector3 world = player.transform.TransformPoint(bladePathLocal[i]);
-            Vector3 local = toMesh * (world - origin);
-            local = new Vector3(
-                local.x / scale.x, local.y / scale.y, local.z / scale.z);
-
-            obj.AppendLine(string.Format(
-                culture, "v {0:F5} {1:F5} {2:F5}", -local.x, local.z, -local.y));
-        }
-
-        obj.Append('l');
-
-        for (int i = 1; i <= bladePathLocal.Count; i++)
-        {
-            obj.Append(' ').Append(i.ToString(culture));
-        }
-
-        obj.AppendLine();
-        System.IO.File.WriteAllText(path, obj.ToString());
-        return true;
-    }
-
-    // Poses the clip across the active window once and keeps the tip positions,
-    // so the whole path can be drawn while scrubbing a single frame.
-    private void EnsureBladePath(SkillAction action, AnimationClip clip)
-    {
-        float start = action.startupDuration;
-        float end = start + action.activeDuration;
-
-        if (cachedPathCombo == comboIndex &&
-            cachedPathInPlace == keepInPlace &&
-            Mathf.Approximately(cachedPathStart, start) &&
-            Mathf.Approximately(cachedPathEnd, end))
-        {
-            return;
-        }
-
-        cachedPathCombo = comboIndex;
-        cachedPathInPlace = keepInPlace;
-        cachedPathStart = start;
-        cachedPathEnd = end;
-        bladePathLocal.Clear();
-
-        ResolveGuideTransforms();
-
-        if (bladeTip == null)
-        {
-            return;
-        }
-
-        int steps = Mathf.Max(
-            2, Mathf.CeilToInt((end - start) * ClipFrameRate * PathSamplesPerFrame));
-
-        for (int i = 0; i <= steps; i++)
-        {
-            float time = Mathf.Lerp(start, end, (float)i / steps);
-            SamplePose(clip, time);
-
-            bladePathLocal.Add(
-                player.transform.InverseTransformPoint(bladeTip.position));
-        }
     }
 
     // Sampling the clip directly applies its root curves, so the body walks
@@ -485,26 +236,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         }
 
         poseGraphClip = null;
-    }
-
-    private void ResolveGuideTransforms()
-    {
-        if (player == null || (effectPivot != null && bladeTip != null))
-        {
-            return;
-        }
-
-        foreach (Transform child in player.GetComponentsInChildren<Transform>(true))
-        {
-            if (effectPivot == null && child.name == EffectPivotName)
-            {
-                effectPivot = child;
-            }
-            else if (bladeTip == null && child.name == BladeTipName)
-            {
-                bladeTip = child;
-            }
-        }
     }
 
     // Shows where the effect's own window sits inside the attack. A duration
@@ -612,14 +343,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
         instances.Clear();
         previewing = false;
-
-        // The pose the path was sampled from is gone, and the next preview may
-        // run against edited timings or a different player.
-        bladePathLocal.Clear();
-        cachedPathCombo = -1;
         DestroyPoseGraph();
-        effectPivot = null;
-        bladeTip = null;
     }
 
     private void Apply(SkillAction action, AnimationClip clip)
@@ -628,10 +352,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         {
             return;
         }
-
-        // The path sweep poses the character itself, so it has to run before
-        // the current frame is sampled rather than after.
-        EnsureBladePath(action, clip);
 
         // Pose the character first; placement reads the posed transforms.
         SamplePose(clip, frame / ClipFrameRate);

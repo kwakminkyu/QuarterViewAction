@@ -8,6 +8,12 @@ public sealed class SkillDebugView : MonoBehaviour
     [SerializeField] private bool logProjectileHits = true;
     [SerializeField] private bool logAreaTicks = true;
     [SerializeField] private bool drawHitboxes = true;
+
+    // Melee hit volumes are reported every frame the attack is active, so they
+    // can be drawn for exactly that window instead of lingering after it.
+    // Raycasts, projectiles and area ticks happen in an instant and still use
+    // Display Duration so they stay visible long enough to see.
+    [SerializeField] private bool overlapOnlyWhileActive = true;
     [SerializeField, Min(0f)] private float displayDuration = 0.4f;
     [SerializeField] private Color missColor = Color.green;
     [SerializeField] private Color hitColor = Color.red;
@@ -18,6 +24,8 @@ public sealed class SkillDebugView : MonoBehaviour
     private Vector3 boxSize;
     private float radius;
     private float visibleUntil;
+    private int reportedFrame;
+    private bool tracksActiveWindow;
     private bool hasHitbox;
     private bool hasHit;
 
@@ -86,7 +94,8 @@ public sealed class SkillDebugView : MonoBehaviour
             data,
             hitboxPosition,
             hitboxRotation,
-            hitCount > 0);
+            hitCount > 0,
+            overlapOnlyWhileActive);
     }
 
     public void ReportRaycast(
@@ -217,14 +226,16 @@ public sealed class SkillDebugView : MonoBehaviour
             data,
             areaPosition,
             areaRotation,
-            hitCount > 0);
+            hitCount > 0,
+            false);
     }
 
     private void SetOverlapVisualization(
         OverlapAttackData data,
         Vector3 hitboxPosition,
         Quaternion hitboxRotation,
-        bool didHit)
+        bool didHit,
+        bool whileActive)
     {
         if (!drawHitboxes)
         {
@@ -239,6 +250,23 @@ public sealed class SkillDebugView : MonoBehaviour
         hasHit = didHit;
         hasHitbox = true;
         visibleUntil = Time.time + displayDuration;
+        reportedFrame = Time.frameCount;
+        tracksActiveWindow = whileActive;
+    }
+
+    // While tracking the active window, the volume stays up only as long as
+    // it keeps being reported: the frame it was reported and the next, since
+    // gizmos can be drawn before this frame's attack has run.
+    private bool IsHitboxVisible()
+    {
+        if (!hasHitbox)
+        {
+            return false;
+        }
+
+        return tracksActiveWindow
+            ? Time.frameCount - reportedFrame <= 1
+            : Time.time <= visibleUntil;
     }
 
     private void OnDrawGizmos()
@@ -252,7 +280,7 @@ public sealed class SkillDebugView : MonoBehaviour
         Color previousColor = Gizmos.color;
         Matrix4x4 previousMatrix = Gizmos.matrix;
 
-        if (hasHitbox && Time.time <= visibleUntil)
+        if (IsHitboxVisible())
         {
             DrawOverlap();
             Gizmos.matrix = Matrix4x4.identity;

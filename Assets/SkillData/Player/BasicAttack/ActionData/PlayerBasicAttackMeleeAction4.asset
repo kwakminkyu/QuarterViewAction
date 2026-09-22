@@ -31,7 +31,7 @@ MonoBehaviour:
     duration: 0.2
     fadeOutDuration: 0.1
     offset: {x: 0, y: 0.06, z: 0.66}
-    scale: {x: 1.5, y: 1.5, z: 1}
+    scale: {x: 1.3, y: 1.3, z: 1}
     swingPlaneNormal: {x: 0, y: 1, z: 0}
     localEuler: {x: 0, y: 0, z: 0}
     stayInWorld: 1
@@ -197,5 +197,5 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   attackData: {fileID: 11400000, guid: d72f9186f7a0410d883a48155c0e1c91, type: 2}
-  centerOffset: {x: 0, y: 0.9, z: 1.1}
+  centerOffset: {x: 0, y: 0.7, z: 0.65}
   invulnerableUntilSkillEnds: 0

@@ -411,6 +411,7 @@ GameObject:
   - component: {fileID: 427776913}
   - component: {fileID: 427776918}
   - component: {fileID: 427776917}
+  - component: {fileID: 427776919}
   m_Layer: 7
   m_Name: TEST_Enemy
   m_TagString: Untagged
@@ -537,6 +538,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
   maxHealth: 9999
+--- !u!114 &427776919
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 427776912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a335a089663d0f45a0f5f35000fdbe2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitReaction
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  flashDuration: 0.12
+  squashAmount: 0.15
+  squashDuration: 0.15
+  knockbackScale: 1
+  knockbackDuration: 0.2
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -611,7 +630,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!23 &1149345670
 MeshRenderer:
   m_ObjectHideFlags: 0

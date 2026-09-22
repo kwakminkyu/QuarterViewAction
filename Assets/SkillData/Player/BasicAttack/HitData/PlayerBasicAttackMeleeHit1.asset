@@ -17,8 +17,8 @@ MonoBehaviour:
     stagger: 5
     knockback: 0.5
   shape: 0
-  boxSize: {x: 1.4, y: 1.6, z: 1.6}
-  radius: 0.5
+  boxSize: {x: 1.4, y: 1.6, z: 1.2}
+  radius: 0
   targetMask:
     serializedVersion: 2
     m_Bits: 4294967295

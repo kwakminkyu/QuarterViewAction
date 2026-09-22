@@ -28,15 +28,15 @@ MonoBehaviour:
     prefab: {fileID: 0}
     material: {fileID: 0}
     color: {r: 4, g: 2, b: 1.1, a: 1}
-    duration: 0.25
-    fadeOutDuration: 0.1
-    offset: {x: 0, y: 0.5, z: 0.2}
-    scale: {x: 1, y: 1, z: 1}
+    duration: 0.12
+    fadeOutDuration: 0.6
+    offset: {x: -0.05, y: 0.5, z: 0.3}
+    scale: {x: 0.9, y: 1, z: 1}
     swingPlaneNormal: {x: 0, y: 1, z: 0}
-    localEuler: {x: 0, y: 0, z: -110}
+    localEuler: {x: 0, y: 0, z: -100}
     stayInWorld: 0
-    revealSpan: 1
-    revealSoftness: 0.2
+    revealSpan: 0.5
+    revealSoftness: 0.25
     scaleCurve:
       serializedVersion: 2
       m_Curve:
@@ -75,5 +75,5 @@ MonoBehaviour:
       m_PostInfinity: 0
       m_RotationOrder: 0
   attackData: {fileID: 11400000, guid: 6e6b06914b294ff49cb593cd8954f648, type: 2}
-  centerOffset: {x: 0, y: 0.9, z: 1.05}
+  centerOffset: {x: 0, y: 0.9, z: 0.8}
   invulnerableUntilSkillEnds: 0
