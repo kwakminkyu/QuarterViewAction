@@ -9,6 +9,11 @@ public enum SkillPhase
     Finished
 }
 
+// Runs before PlayerInputController so a skill that finishes this frame is
+// seen as finished by UpdateAttackEnd in the same frame. Otherwise an input
+// callback next frame can start a new attack before AttackEnd is sent, and
+// the animator advances its combo chain instead of restarting it.
+[DefaultExecutionOrder(-10)]
 [RequireComponent(typeof(CharacterMovement), typeof(DamageReceiver))]
 public sealed class SkillController : MonoBehaviour
 {

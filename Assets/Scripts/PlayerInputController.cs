@@ -139,7 +139,7 @@ public sealed class PlayerInputController : MonoBehaviour
         }
 
         lastAnimatedActionIndex = actionIndex;
-        animationController?.PlayAttack();
+        animationController?.PlayAttack(actionIndex);
     }
 
     private void UpdateAttackEnd()
