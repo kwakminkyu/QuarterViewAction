@@ -1512,8 +1512,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a335a089663d0f45a0f5f35000fdbe2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HitReaction
-  flashColor: {r: 1, g: 0.25, b: 0.25, a: 1}
-  flashDuration: 0.15
+  flashColor: {r: 1, g: 0.08, b: 0.08, a: 0.9}
+  flashDuration: 0.2
+  flashOverlay: {fileID: 2100000, guid: dbaedcc5871a2e041872203e84d5b1cd, type: 2}
   squashAmount: 0.15
   squashDuration: 0.15
   knockbackDeceleration: 20

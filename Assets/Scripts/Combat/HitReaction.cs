@@ -1,7 +1,7 @@
 using UnityEngine;
 
-// Makes a hit visible on whatever it is added to: a white flash, a quick
-// squash, and a shove along the hit direction by the attack's knockback.
+// Makes a hit visible on whatever it is added to: a flash, a quick squash,
+// and a shove along the hit direction by the attack's knockback.
 // Listens to the DamageReceiver, so any attack that deals damage triggers it
 // with no changes on the attack side.
 //
@@ -15,8 +15,14 @@ public sealed class HitReaction : MonoBehaviour
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
     [Header("Flash")]
+    // With an overlay, its alpha is how opaque the overlay starts out.
     [SerializeField] private Color flashColor = Color.white;
     [SerializeField, Min(0f)] private float flashDuration = 0.12f;
+    [Tooltip("Optional. Drawn over the whole body for the flash instead of " +
+        "tinting its base colour - for textured models, whose white base " +
+        "colour a tint barely changes. A transparent material whose " +
+        "_BaseColor this drives.")]
+    [SerializeField] private Material flashOverlay;
 
     [Header("Squash")]
     // How much the body squashes on impact, and how fast it springs back.
@@ -34,6 +40,13 @@ public sealed class HitReaction : MonoBehaviour
     private Color[] baseColors;
     private MaterialPropertyBlock propertyBlock;
     private Vector3 restScale;
+
+    // Overlay mode: each body renderer's own materials, and the same list
+    // with the overlay drawn last, swapped in only while a flash shows.
+    private Renderer[] overlayRenderers;
+    private Material[][] plainMaterials;
+    private Material[][] overlaidMaterials;
+    private bool isOverlaid;
 
     private float flashTimer;
     private float squashTimer;
@@ -55,6 +68,33 @@ public sealed class HitReaction : MonoBehaviour
             baseColors[i] = material != null && material.HasProperty(BaseColorId)
                 ? material.GetColor(BaseColorId)
                 : Color.white;
+        }
+
+        if (flashOverlay != null)
+        {
+            PrepareOverlay();
+        }
+    }
+
+    private void PrepareOverlay()
+    {
+        // Mesh bodies only: a trail or particles would draw the overlay as a
+        // smear rather than a silhouette.
+        overlayRenderers = System.Array.FindAll(
+            renderers,
+            r => r is MeshRenderer || r is SkinnedMeshRenderer);
+        plainMaterials = new Material[overlayRenderers.Length][];
+        overlaidMaterials = new Material[overlayRenderers.Length][];
+
+        for (int i = 0; i < overlayRenderers.Length; i++)
+        {
+            Material[] plain = overlayRenderers[i].sharedMaterials;
+            Material[] overlaid = new Material[plain.Length + 1];
+            plain.CopyTo(overlaid, 0);
+            overlaid[plain.Length] = flashOverlay;
+
+            plainMaterials[i] = plain;
+            overlaidMaterials[i] = overlaid;
         }
     }
 
@@ -129,11 +169,52 @@ public sealed class HitReaction : MonoBehaviour
 
     private void ApplyFlash(float amount)
     {
+        if (overlayRenderers != null)
+        {
+            ApplyOverlay(amount);
+            return;
+        }
+
         for (int i = 0; i < renderers.Length; i++)
         {
             renderers[i].GetPropertyBlock(propertyBlock);
             propertyBlock.SetColor(BaseColorId, Color.Lerp(baseColors[i], flashColor, amount));
             renderers[i].SetPropertyBlock(propertyBlock);
+        }
+    }
+
+    private void ApplyOverlay(float amount)
+    {
+        bool show = amount > 0f;
+
+        if (show != isOverlaid)
+        {
+            isOverlaid = show;
+
+            for (int i = 0; i < overlayRenderers.Length; i++)
+            {
+                overlayRenderers[i].sharedMaterials = show
+                    ? overlaidMaterials[i]
+                    : plainMaterials[i];
+            }
+        }
+
+        if (!show)
+        {
+            return;
+        }
+
+        Color color = flashColor;
+        color.a *= amount;
+
+        for (int i = 0; i < overlayRenderers.Length; i++)
+        {
+            // Set on the overlay's slot alone, leaving the body's own
+            // materials untouched.
+            int overlayIndex = overlaidMaterials[i].Length - 1;
+            overlayRenderers[i].GetPropertyBlock(propertyBlock, overlayIndex);
+            propertyBlock.SetColor(BaseColorId, color);
+            overlayRenderers[i].SetPropertyBlock(propertyBlock, overlayIndex);
         }
     }
 }
