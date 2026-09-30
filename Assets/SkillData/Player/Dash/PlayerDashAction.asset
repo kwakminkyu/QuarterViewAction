@@ -16,6 +16,7 @@ MonoBehaviour:
   activeDuration: 0.18
   recoveryDuration: 0
   recoveryCancelDelay: 0
+  animationState: Dash
   movementSettings:
     phases: 2
     mode: 0

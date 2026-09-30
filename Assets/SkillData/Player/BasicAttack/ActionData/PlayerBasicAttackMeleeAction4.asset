@@ -16,6 +16,7 @@ MonoBehaviour:
   activeDuration: 0.13333334
   recoveryDuration: 0.2333333
   recoveryCancelDelay: 0.1
+  animationState: BasicCombo4
   movementSettings:
     phases: 1
     mode: 1

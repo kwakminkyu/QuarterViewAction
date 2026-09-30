@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -17,11 +16,7 @@ public sealed class PlayerInputController : MonoBehaviour
     private CharacterAim characterAim;
     private SkillController skillController;
     private SkillDebugView skillDebugView;
-    private PlayerAnimationController animationController;
     private Camera worldCamera;
-    private SkillDefinition basicAttackDefinition;
-    private bool wasAttacking;
-    private int lastAnimatedActionIndex = -1;
 
     public Vector2 MoveInput { get; private set; }
     public Vector2 AimInput { get; private set; }
@@ -32,18 +27,7 @@ public sealed class PlayerInputController : MonoBehaviour
         characterAim = GetComponent<CharacterAim>();
         skillController = GetComponent<SkillController>();
         skillDebugView = GetComponent<SkillDebugView>();
-        animationController = GetComponentInChildren<PlayerAnimationController>();
         worldCamera = Camera.main;
-
-        try
-        {
-            basicAttackDefinition =
-                skillController.GetSkillInstance(BasicAttackSlot).Definition;
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            basicAttackDefinition = null;
-        }
     }
 
     public void OnMove(InputAction.CallbackContext context)
@@ -83,16 +67,11 @@ public sealed class PlayerInputController : MonoBehaviour
             direction = characterAim.AimDirection;
         }
 
-        bool accepted = TryUseSkill(
+        TryUseSkill(
             context,
             DashSlot,
             "Dash",
             direction);
-
-        if (accepted)
-        {
-            animationController?.PlayDash();
-        }
     }
 
     public void OnUltimate(InputAction.CallbackContext context)
@@ -114,44 +93,6 @@ public sealed class PlayerInputController : MonoBehaviour
             ? skillController.CurrentDirection
             : moveDirection;
         characterAim.FaceDirection(facingDirection);
-
-        UpdateAttackAnimation();
-        UpdateAttackEnd();
-    }
-
-    private void UpdateAttackAnimation()
-    {
-        bool isBasicAttackActive =
-            skillController.IsExecuting &&
-            skillController.CurrentSkillDefinition == basicAttackDefinition;
-
-        if (!isBasicAttackActive)
-        {
-            lastAnimatedActionIndex = -1;
-            return;
-        }
-
-        int actionIndex = skillController.CurrentActionIndex;
-
-        if (actionIndex == lastAnimatedActionIndex)
-        {
-            return;
-        }
-
-        lastAnimatedActionIndex = actionIndex;
-        animationController?.PlayAttack(actionIndex);
-    }
-
-    private void UpdateAttackEnd()
-    {
-        bool isAttacking = skillController.IsExecuting;
-
-        if (wasAttacking && !isAttacking && animationController != null)
-        {
-            animationController.EndAttack();
-        }
-
-        wasAttacking = isAttacking;
     }
 
     private Vector3 GetCameraRelativeMoveDirection(Vector2 input)

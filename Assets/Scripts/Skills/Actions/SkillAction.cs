@@ -32,6 +32,11 @@ public abstract class SkillAction : ScriptableObject
     [Min(0f)] public float recoveryDuration;
     [Min(0f)] public float recoveryCancelDelay;
 
+    // Animator state the character plays when this action starts, entered by
+    // name so any character whose controller has a state of that name can run
+    // the action. Empty plays nothing and leaves the current motion alone.
+    public string animationState;
+
     public SkillMovementSettings movementSettings;
 
     // Optional, and on the base so any action type can opt in without a
@@ -41,6 +46,28 @@ public abstract class SkillAction : ScriptableObject
     // measured from the active phase opening. Authored in ascending delay
     // order; SkillController walks the list with a cursor.
     public ActionEffectSettings[] effects = Array.Empty<ActionEffectSettings>();
+
+    [NonSerialized] private int animationStateHash;
+
+    public bool HasAnimation => !string.IsNullOrEmpty(animationState);
+    public int AnimationStateHash => animationStateHash;
+
+    protected virtual void OnEnable()
+    {
+        CacheAnimationStateHash();
+    }
+
+    protected virtual void OnValidate()
+    {
+        CacheAnimationStateHash();
+    }
+
+    private void CacheAnimationStateHash()
+    {
+        animationStateHash = HasAnimation
+            ? Animator.StringToHash(animationState)
+            : 0;
+    }
 
     public void ApplyPhaseMovement(
         SkillPhase phase,

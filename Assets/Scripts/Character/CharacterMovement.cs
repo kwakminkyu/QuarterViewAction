@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController), typeof(DamageReceiver))]
@@ -10,7 +11,6 @@ public sealed class CharacterMovement : MonoBehaviour
 
     private CharacterController characterController;
     private DamageReceiver damageReceiver;
-    private PlayerAnimationController animationController;
     private Vector3 knockbackVelocity;
     private Vector3 skillVelocity;
     private float verticalVelocity;
@@ -19,11 +19,13 @@ public sealed class CharacterMovement : MonoBehaviour
     public Vector3 MoveDirection { get; private set; }
     public bool IsMoving => MoveDirection.sqrMagnitude > 0f;
 
+    // Raised only when IsMoving flips, not on every Move call.
+    public event Action<bool> MovingChanged;
+
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
         damageReceiver = GetComponent<DamageReceiver>();
-        animationController = GetComponentInChildren<PlayerAnimationController>();
     }
 
     private void OnEnable()
@@ -58,11 +60,6 @@ public sealed class CharacterMovement : MonoBehaviour
 
         characterController.Move(velocity * Time.deltaTime);
 
-        if (animationController != null)
-        {
-            animationController.SetMoving(IsMoving);
-        }
-
         knockbackVelocity = Vector3.MoveTowards(
             knockbackVelocity,
             Vector3.zero,
@@ -79,7 +76,14 @@ public sealed class CharacterMovement : MonoBehaviour
     public void Move(Vector3 worldDirection)
     {
         worldDirection.y = 0f;
+
+        bool wasMoving = IsMoving;
         MoveDirection = Vector3.ClampMagnitude(worldDirection, 1f);
+
+        if (IsMoving != wasMoving)
+        {
+            MovingChanged?.Invoke(IsMoving);
+        }
     }
 
     public void BeginSkillControl()

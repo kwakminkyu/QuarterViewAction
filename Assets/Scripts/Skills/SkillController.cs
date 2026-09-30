@@ -9,11 +9,6 @@ public enum SkillPhase
     Finished
 }
 
-// Runs before PlayerInputController so a skill that finishes this frame is
-// seen as finished by UpdateAttackEnd in the same frame. Otherwise an input
-// callback next frame can start a new attack before AttackEnd is sent, and
-// the animator advances its combo chain instead of restarting it.
-[DefaultExecutionOrder(-10)]
 [RequireComponent(typeof(CharacterMovement), typeof(DamageReceiver))]
 public sealed class SkillController : MonoBehaviour
 {
@@ -47,6 +42,12 @@ public sealed class SkillController : MonoBehaviour
     private bool hasPendingCombo;
     private Vector3 pendingComboDirection;
     private Transform pendingComboTarget;
+
+    // Raised as each action enters its startup, for the first action and for
+    // every combo step after it. When one skill cancels another, SkillEnded
+    // for the old one is always raised before ActionStarted for the new one.
+    public event Action<SkillAction> ActionStarted;
+    public event Action SkillEnded;
 
     public bool IsExecuting => currentSkill != null;
     public SkillDefinition CurrentSkillDefinition =>
@@ -205,6 +206,7 @@ public sealed class SkillController : MonoBehaviour
         currentTarget = target;
         ChangePhase(SkillPhase.Startup);
         movement.BeginSkillControl();
+        RaiseActionStarted();
     }
 
     private void UpdateCurrentExecution(float deltaTime)
@@ -406,6 +408,19 @@ public sealed class SkillController : MonoBehaviour
         currentTarget = target;
         hasPendingCombo = false;
         ChangePhase(SkillPhase.Startup);
+        RaiseActionStarted();
+    }
+
+    private void RaiseActionStarted()
+    {
+        if (ActionStarted != null &&
+            TryGetAction(
+                currentSkill.Definition,
+                currentActionIndex,
+                out SkillAction action))
+        {
+            ActionStarted(action);
+        }
     }
 
     private bool CanStartDuringRecovery(SkillInstance requestedSkill)
@@ -605,6 +620,10 @@ public sealed class SkillController : MonoBehaviour
                 }
 
                 isFinishingSkill = false;
+
+                // Raised last, so a listener that starts another skill in
+                // response finds this one fully torn down.
+                SkillEnded?.Invoke();
             }
         }
     }
