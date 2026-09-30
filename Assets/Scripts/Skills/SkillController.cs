@@ -118,7 +118,12 @@ public sealed class SkillController : MonoBehaviour
         Vector3 direction,
         Transform target = null)
     {
-        if (isFinishingSkill ||
+        // Refused here rather than left to each caller: PlayerInput keeps
+        // invoking its handlers on disabled components, so switching the
+        // input script off at death is not enough to stop a new skill.
+        if (!isActiveAndEnabled ||
+            (health != null && health.IsDepleted) ||
+            isFinishingSkill ||
             !TryGetSkillInstance(slotIndex, out SkillInstance skill))
         {
             return false;

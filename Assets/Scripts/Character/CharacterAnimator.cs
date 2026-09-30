@@ -138,5 +138,11 @@ public sealed class CharacterAnimator : MonoBehaviour
         {
             animator.Play(DeathHash, 0, 0f);
         }
+        else
+        {
+            // Without a death motion the body is tipped over from outside
+            // (CharacterDeath); hold the pose so it doesn't idle while lying.
+            animator.speed = 0f;
+        }
     }
 }

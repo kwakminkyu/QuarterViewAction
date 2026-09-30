@@ -36,7 +36,6 @@ public sealed class Health : MonoBehaviour
             Depleted?.Invoke();
         }
 
-        Debug.Log("Current Health: " + CurrentHealth + "/" + maxHealth);
         return decreasedAmount;
     }
 }

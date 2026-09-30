@@ -20,6 +20,7 @@ public sealed class MonsterAIController : MonoBehaviour
     private SkillController skillController;
     private Health health;
     private Transform target;
+    private Health targetHealth;
     private AIState currentState;
 
     private void Awake()
@@ -34,20 +35,13 @@ public sealed class MonsterAIController : MonoBehaviour
         agent.updateRotation = false;
     }
 
-    private void OnEnable()
-    {
-        health.Depleted += OnDeath;
-    }
-
-    private void OnDisable()
-    {
-        health.Depleted -= OnDeath;
-    }
-
     private void Start()
     {
         target = PlayerReference.Instance != null
             ? PlayerReference.Instance.Target
+            : null;
+        targetHealth = target != null
+            ? target.GetComponent<Health>()
             : null;
 
         ChangeState(AIState.Idle);
@@ -55,8 +49,21 @@ public sealed class MonsterAIController : MonoBehaviour
 
     private void Update()
     {
+        // Its own death is taken care of by CharacterDeath, which switches
+        // this off along with the agent; this only keeps it idle meanwhile.
         if (target == null || health.IsDepleted)
         {
+            return;
+        }
+
+        // Stands down over a dead target rather than swinging at it.
+        if (targetHealth != null && targetHealth.IsDepleted)
+        {
+            if (currentState != AIState.Idle && !skillController.IsExecuting)
+            {
+                ChangeState(AIState.Idle);
+            }
+
             return;
         }
 
@@ -67,6 +74,11 @@ public sealed class MonsterAIController : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (!agent.isActiveAndEnabled)
+        {
+            return;
+        }
+
         agent.nextPosition = transform.position;
     }
 
@@ -143,12 +155,5 @@ public sealed class MonsterAIController : MonoBehaviour
                 skillSelector.Tick(target);
                 break;
         }
-    }
-
-    private void OnDeath()
-    {
-        enabled = false;
-        agent.isStopped = true;
-        characterMovement.Move(Vector3.zero);
     }
 }

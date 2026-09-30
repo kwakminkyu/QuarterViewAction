@@ -1169,6 +1169,7 @@ GameObject:
   - component: {fileID: 185863074319577183}
   - component: {fileID: 5986854721294433647}
   - component: {fileID: 7800337873001204955}
+  - component: {fileID: 4041813159774532644}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -1419,6 +1420,7 @@ MonoBehaviour:
   logProjectileHits: 1
   logAreaTicks: 1
   drawHitboxes: 1
+  overlapOnlyWhileActive: 1
   displayDuration: 0.4
   missColor: {r: 0, g: 1, b: 0, a: 1}
   hitColor: {r: 1, g: 0, b: 0, a: 1}
@@ -1474,6 +1476,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterEffectSpawner
   slashPrefab: {fileID: 2397947463953987162, guid: 47e7f0b8ff7654049808c47bd62a168f, type: 3}
   effectPivotName: EffectPivot
+--- !u!114 &4041813159774532644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8914209181927161043}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1281ee9a57ec8274aa8e79290d167acb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterDeath
+  disableOnDeath:
+  - {fileID: 8749477820907803773}
+  - {fileID: 3955136417628282131}
+  body: {fileID: 5642198483494965779}
+  fallAngle: 90
+  fallDuration: 0.35
+  removeAfterDeath: 0
+  removeDelay: 0.6
+  sinkDuration: 0.8
+  sinkDepth: 1.5
 --- !u!1 &9200434211284593741
 GameObject:
   m_ObjectHideFlags: 0
