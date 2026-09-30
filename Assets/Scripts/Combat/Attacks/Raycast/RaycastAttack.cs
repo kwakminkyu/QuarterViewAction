@@ -55,6 +55,13 @@ public sealed class RaycastAttack
         float healthBeforeDamage = receiver.health.CurrentHealth;
 
         receiver.TakeDamage(in damageInfo);
-        return receiver.health.CurrentHealth < healthBeforeDamage;
+
+        if (receiver.health.CurrentHealth >= healthBeforeDamage)
+        {
+            return false;
+        }
+
+        HitFeedback.Play(in context, in damageInfo);
+        return true;
     }
 }

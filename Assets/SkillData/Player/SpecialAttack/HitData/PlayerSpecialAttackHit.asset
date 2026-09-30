@@ -16,6 +16,8 @@ MonoBehaviour:
     damage: 30
     stagger: 25
     knockback: 8
+  cameraShake: 0.2
+  impactEffect: {fileID: 7461255759719680121, guid: dd23997e6f30bc34f9f89641fdc65182, type: 3}
   shape: 0
   boxSize: {x: 2.4, y: 2, z: 2.6}
   radius: 0.5

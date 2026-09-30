@@ -16,6 +16,8 @@ MonoBehaviour:
     damage: 8
     stagger: 3
     knockback: 0.5
+  cameraShake: 0.03
+  impactEffect: {fileID: 7461255759719680121, guid: dd23997e6f30bc34f9f89641fdc65182, type: 3}
   projectilePrefab: {fileID: 3879603967635915315, guid: 8d530e30c9a033d49bc15f0015c5d932, type: 3}
   speed: 14
   lifetime: 2.5

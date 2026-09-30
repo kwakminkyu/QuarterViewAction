@@ -1171,6 +1171,7 @@ GameObject:
   - component: {fileID: 7800337873001204955}
   - component: {fileID: 4041813159774532644}
   - component: {fileID: 6661144454031353351}
+  - component: {fileID: 4050323054766245303}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -1518,6 +1519,21 @@ MonoBehaviour:
   squashAmount: 0.15
   squashDuration: 0.15
   knockbackDeceleration: 20
+--- !u!114 &4050323054766245303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8914209181927161043}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b6a4be4de5b02f40aa35606a298e009, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitSlowMotion
+  timeScale: 0.2
+  holdDuration: 0.12
+  recoverDuration: 0.1
 --- !u!1 &9200434211284593741
 GameObject:
   m_ObjectHideFlags: 0

@@ -220,6 +220,13 @@ public sealed class Projectile : MonoBehaviour
         float healthBeforeDamage = receiver.health.CurrentHealth;
 
         receiver.TakeDamage(in damageInfo);
-        return receiver.health.CurrentHealth < healthBeforeDamage;
+
+        if (receiver.health.CurrentHealth >= healthBeforeDamage)
+        {
+            return false;
+        }
+
+        HitFeedback.Play(in attackContext, in damageInfo);
+        return true;
     }
 }

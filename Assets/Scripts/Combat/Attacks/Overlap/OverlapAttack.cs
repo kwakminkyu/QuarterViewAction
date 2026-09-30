@@ -80,6 +80,7 @@ public sealed class OverlapAttack
                 if (receiver.health.CurrentHealth < healthBeforeDamage)
                 {
                     hitCount++;
+                    HitFeedback.Play(in context, in damageInfo);
                 }
             }
         }
