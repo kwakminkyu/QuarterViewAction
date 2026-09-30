@@ -15,9 +15,11 @@ public sealed class CharacterMovement : MonoBehaviour
     private Vector3 skillVelocity;
     private float verticalVelocity;
     private bool isSkillControlling;
+    private int lockCount;
 
     public Vector3 MoveDirection { get; private set; }
     public bool IsMoving => MoveDirection.sqrMagnitude > 0f;
+    public bool IsLocked => lockCount > 0;
 
     // Raised only when IsMoving flips, not on every Move call.
     public event Action<bool> MovingChanged;
@@ -75,6 +77,13 @@ public sealed class CharacterMovement : MonoBehaviour
 
     public void Move(Vector3 worldDirection)
     {
+        // Whoever steers keeps asking every frame; while locked the answer is
+        // to stand still, so the next request after Unlock takes over again.
+        if (IsLocked)
+        {
+            worldDirection = Vector3.zero;
+        }
+
         worldDirection.y = 0f;
 
         bool wasMoving = IsMoving;
@@ -84,6 +93,19 @@ public sealed class CharacterMovement : MonoBehaviour
         {
             MovingChanged?.Invoke(IsMoving);
         }
+    }
+
+    // Stops locomotion for a state that passes, such as a stagger. Knockback
+    // and gravity still apply, so a staggering hit still shoves the body.
+    public void Lock()
+    {
+        lockCount++;
+        Move(Vector3.zero);
+    }
+
+    public void Unlock()
+    {
+        lockCount = Mathf.Max(lockCount - 1, 0);
     }
 
     public void BeginSkillControl()

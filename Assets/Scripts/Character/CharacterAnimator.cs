@@ -17,12 +17,17 @@ public sealed class CharacterAnimator : MonoBehaviour
     // Optional: played when health runs out, if the controller has the state.
     private static readonly int DeathHash = Animator.StringToHash("Death");
 
+    // Optional: played for a stagger, if the controller has the state, and
+    // left through ActionEnd like any action.
+    private static readonly int HitHash = Animator.StringToHash("Hit");
+
     private readonly HashSet<int> reportedMissingStates = new();
 
     private Animator animator;
     private SkillController skillController;
     private CharacterMovement movement;
     private Health health;
+    private Poise poise;
     private bool isPlayingAction;
     private bool isDead;
 
@@ -35,6 +40,7 @@ public sealed class CharacterAnimator : MonoBehaviour
         skillController = GetComponentInParent<SkillController>();
         movement = GetComponentInParent<CharacterMovement>();
         health = GetComponentInParent<Health>();
+        poise = GetComponentInParent<Poise>();
     }
 
     private void OnEnable()
@@ -55,6 +61,12 @@ public sealed class CharacterAnimator : MonoBehaviour
         {
             health.Depleted += OnDepleted;
         }
+
+        if (poise != null)
+        {
+            poise.Staggered += OnStaggered;
+            poise.StaggerEnded += OnSkillEnded;
+        }
     }
 
     private void OnDisable()
@@ -73,6 +85,12 @@ public sealed class CharacterAnimator : MonoBehaviour
         if (health != null)
         {
             health.Depleted -= OnDepleted;
+        }
+
+        if (poise != null)
+        {
+            poise.Staggered -= OnStaggered;
+            poise.StaggerEnded -= OnSkillEnded;
         }
     }
 
@@ -109,6 +127,21 @@ public sealed class CharacterAnimator : MonoBehaviour
         isPlayingAction = true;
     }
 
+    // The stagger has already cancelled the running skill, so its SkillEnded
+    // came first; the hit motion replaces whatever that returned to.
+    private void OnStaggered()
+    {
+        if (isDead || !animator.HasState(0, HitHash))
+        {
+            return;
+        }
+
+        animator.ResetTrigger(ActionEndHash);
+        animator.Play(HitHash, 0, 0f);
+        isPlayingAction = true;
+    }
+
+    // Also the end of a stagger: both return to locomotion the same way.
     private void OnSkillEnded()
     {
         // A skill that played nothing has nothing to return from.

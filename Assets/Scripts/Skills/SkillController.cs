@@ -39,6 +39,7 @@ public sealed class SkillController : MonoBehaviour
     private int nextEffectIndex;
 
     private bool isFinishingSkill;
+    private int lockCount;
     private bool hasPendingCombo;
     private Vector3 pendingComboDirection;
     private Transform pendingComboTarget;
@@ -50,6 +51,7 @@ public sealed class SkillController : MonoBehaviour
     public event Action SkillEnded;
 
     public bool IsExecuting => currentSkill != null;
+    public bool IsLocked => lockCount > 0;
     public SkillDefinition CurrentSkillDefinition =>
         currentSkill?.Definition;
     public SkillPhase CurrentPhase => currentPhase;
@@ -123,6 +125,7 @@ public sealed class SkillController : MonoBehaviour
         // input script off at death is not enough to stop a new skill.
         if (!isActiveAndEnabled ||
             (health != null && health.IsDepleted) ||
+            IsLocked ||
             isFinishingSkill ||
             !TryGetSkillInstance(slotIndex, out SkillInstance skill))
         {
@@ -164,6 +167,21 @@ public sealed class SkillController : MonoBehaviour
     public void CancelCurrentSkill()
     {
         FinishCurrentSkill();
+    }
+
+    // For states that interrupt a character and then pass, such as a
+    // stagger: the running skill is cut off and no new one starts until every
+    // Lock has been matched by an Unlock. Death does not use this - it
+    // switches the component off for good.
+    public void Lock()
+    {
+        lockCount++;
+        CancelCurrentSkill();
+    }
+
+    public void Unlock()
+    {
+        lockCount = Mathf.Max(lockCount - 1, 0);
     }
 
     public SkillInstance GetSkillInstance(int slotIndex)

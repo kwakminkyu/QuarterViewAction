@@ -387,6 +387,7 @@ GameObject:
   - component: {fileID: 7494644518448289734}
   - component: {fileID: 5284878853811968565}
   - component: {fileID: 5768140840122695208}
+  - component: {fileID: 3094605951676875052}
   m_Layer: 7
   m_Name: MonsterBase
   m_TagString: Untagged
@@ -583,6 +584,22 @@ MonoBehaviour:
   removeDelay: 0.6
   sinkDuration: 0.8
   sinkDepth: 1.5
+--- !u!114 &3094605951676875052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5544708251322393906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1afe5508822f2734e8002b83a93ecd74, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Poise
+  maxPoise: 10
+  staggerDuration: 0.6
+  recoveryDelay: 1.5
+  recoveryRate: 10
 --- !u!1 &6359854230872797729
 GameObject:
   m_ObjectHideFlags: 0
