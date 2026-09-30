@@ -22,6 +22,8 @@ Material:
     RenderType: Transparent
   disabledShaderPasses:
   - MOTIONVECTORS
+  - DepthOnly
+  - SHADOWCASTER
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -54,7 +56,7 @@ Material:
     - _ZWrite: 0
     m_Colors:
     - _BaseColor: {r: 1, g: 0.25, b: 0.2, a: 0.22}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 0.24999997, b: 0.19999996, a: 0.22}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &1801534764506105190
