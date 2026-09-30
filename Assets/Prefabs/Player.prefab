@@ -1170,6 +1170,7 @@ GameObject:
   - component: {fileID: 5986854721294433647}
   - component: {fileID: 7800337873001204955}
   - component: {fileID: 4041813159774532644}
+  - component: {fileID: 6661144454031353351}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -1450,6 +1451,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
   health: {fileID: 2089929497190183677}
+  invulnerableAfterHit: 0.4
 --- !u!114 &5986854721294433647
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1498,6 +1500,23 @@ MonoBehaviour:
   removeDelay: 0.6
   sinkDuration: 0.8
   sinkDepth: 1.5
+--- !u!114 &6661144454031353351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8914209181927161043}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a335a089663d0f45a0f5f35000fdbe2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitReaction
+  flashColor: {r: 1, g: 0.25, b: 0.25, a: 1}
+  flashDuration: 0.15
+  squashAmount: 0.15
+  squashDuration: 0.15
+  knockbackDeceleration: 20
 --- !u!1 &9200434211284593741
 GameObject:
   m_ObjectHideFlags: 0
