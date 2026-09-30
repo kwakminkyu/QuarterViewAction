@@ -1358,6 +1358,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8940eb8538b1c6409c3537646bd4c97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputController
+  attackBufferDuration: 0.15
 --- !u!114 &4619026727953784212
 MonoBehaviour:
   m_ObjectHideFlags: 0

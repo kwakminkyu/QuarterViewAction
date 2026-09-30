@@ -16,7 +16,7 @@ MonoBehaviour:
   activeDuration: 0.1
   recoveryDuration: 0.33333334
   recoveryCancelDelay: 0.1
-  comboInputWindow: 2
+  comboInputWindow: 0
   animationState: BasicCombo2
   movementSettings:
     phases: 3
