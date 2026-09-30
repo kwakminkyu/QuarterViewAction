@@ -18,6 +18,7 @@ public sealed class MonsterAIController : MonoBehaviour
     private CharacterMovement characterMovement;
     private MonsterSkillSelector skillSelector;
     private SkillController skillController;
+    private CharacterAim characterAim;
     private Health health;
     private Transform target;
     private Health targetHealth;
@@ -30,6 +31,9 @@ public sealed class MonsterAIController : MonoBehaviour
         skillSelector = GetComponent<MonsterSkillSelector>();
         skillController = GetComponent<SkillController>();
         health = GetComponent<Health>();
+
+        // Optional: without it the body just never turns.
+        characterAim = GetComponent<CharacterAim>();
 
         agent.updatePosition = false;
         agent.updateRotation = false;
@@ -70,6 +74,28 @@ public sealed class MonsterAIController : MonoBehaviour
         float distance = GetFlatDistance();
         UpdateState(distance);
         TickState();
+        UpdateFacing();
+    }
+
+    // Faces the swing while attacking, the path while chasing, and the target
+    // otherwise, so the body always shows where a hit will come from. A
+    // staggered body stays as it was knocked, and an idle one as it stood.
+    private void UpdateFacing()
+    {
+        if (characterAim == null ||
+            currentState == AIState.Idle ||
+            characterMovement.IsLocked)
+        {
+            return;
+        }
+
+        Vector3 direction = skillController.IsExecuting
+            ? skillController.CurrentDirection
+            : characterMovement.IsMoving
+                ? characterMovement.MoveDirection
+                : target.position - transform.position;
+
+        characterAim.FaceDirection(direction);
     }
 
     private void LateUpdate()

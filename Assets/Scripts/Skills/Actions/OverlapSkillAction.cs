@@ -8,6 +8,22 @@ public sealed class OverlapSkillAction : SkillAction
         new Vector3(0f, 1f, 1f);
     public bool invulnerableUntilSkillEnds;
 
+    public override bool TryGetHitArea(out Vector3 offset, out Vector2 size)
+    {
+        offset = centerOffset;
+
+        if (attackData == null)
+        {
+            size = Vector2.zero;
+            return false;
+        }
+
+        size = attackData.shape == OverlapShape.Sphere
+            ? Vector2.one * (attackData.radius * 2f)
+            : new Vector2(attackData.boxSize.x, attackData.boxSize.z);
+        return true;
+    }
+
     public override void OnActiveEnter(
         in SkillActionContext context)
     {

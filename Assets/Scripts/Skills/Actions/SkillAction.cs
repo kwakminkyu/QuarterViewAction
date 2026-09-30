@@ -104,6 +104,24 @@ public abstract class SkillAction : ScriptableObject
         }
     }
 
+    // The ground the action's hit will cover, for warning about it ahead of
+    // time: a centre offset in the frame of the attack direction, and a
+    // width (x) and length (z). Actions without a fixed area report none.
+    public virtual bool TryGetHitArea(out Vector3 centerOffset, out Vector2 size)
+    {
+        centerOffset = Vector3.zero;
+        size = Vector2.zero;
+        return false;
+    }
+
+    // How far the action carries its user forward while its hit is out, so a
+    // warning can cover where a lunging hit will land.
+    public float ActiveLungeDistance =>
+        movementSettings.mode == SkillMovementMode.FixedLunge &&
+        (movementSettings.phases & SkillMovementPhases.Active) != 0
+            ? movementSettings.lungeDistance
+            : 0f;
+
     public virtual void OnActiveEnter(in SkillActionContext context)
     {
     }
