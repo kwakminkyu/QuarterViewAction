@@ -25,12 +25,24 @@ public struct SkillMovementSettings
     [Min(0f)] public float moveSpeedMultiplier;
 }
 
+// From which phase of a combo action the next step's input is taken. Input
+// that arrives before recovery is held and still fires at recoveryCancelDelay,
+// so this changes what is dropped, not the combo's tempo. Values are fixed
+// because they are serialized: 0 has to stay the default.
+public enum ComboInputWindow
+{
+    FromActive = 0,
+    FromStartup = 1,
+    RecoveryOnly = 2,
+}
+
 public abstract class SkillAction : ScriptableObject
 {
     [Min(0f)] public float startupDuration;
     [Min(0f)] public float activeDuration;
     [Min(0f)] public float recoveryDuration;
     [Min(0f)] public float recoveryCancelDelay;
+    public ComboInputWindow comboInputWindow;
 
     // Animator state the character plays when this action starts, entered by
     // name so any character whose controller has a state of that name can run

@@ -390,7 +390,10 @@ public sealed class SkillController : MonoBehaviour
             return false;
         }
 
-        if (phaseElapsedTime < currentAction.recoveryCancelDelay)
+        // Too early to go on: held, and fired by the recovery phase once
+        // recoveryCancelDelay has passed.
+        if (currentPhase != SkillPhase.Recovery ||
+            phaseElapsedTime < currentAction.recoveryCancelDelay)
         {
             hasPendingCombo = true;
             pendingComboDirection = direction;
@@ -411,7 +414,6 @@ public sealed class SkillController : MonoBehaviour
 
         return ReferenceEquals(currentSkill, requestedSkill) &&
             requestedSkill.Definition.IsCombo &&
-            currentPhase == SkillPhase.Recovery &&
             currentActionIndex <
                 requestedSkill.Definition.ActionCount - 1 &&
             TryGetAction(
@@ -421,7 +423,26 @@ public sealed class SkillController : MonoBehaviour
             TryGetAction(
                 requestedSkill.Definition,
                 currentActionIndex,
-                out currentAction);
+                out currentAction) &&
+            IsComboInputOpen(currentAction);
+    }
+
+    private bool IsComboInputOpen(SkillAction action)
+    {
+        switch (currentPhase)
+        {
+            case SkillPhase.Recovery:
+                return true;
+
+            case SkillPhase.Active:
+                return action.comboInputWindow != ComboInputWindow.RecoveryOnly;
+
+            case SkillPhase.Startup:
+                return action.comboInputWindow == ComboInputWindow.FromStartup;
+
+            default:
+                return false;
+        }
     }
 
     private void AdvanceCombo(Vector3 direction, Transform target)
