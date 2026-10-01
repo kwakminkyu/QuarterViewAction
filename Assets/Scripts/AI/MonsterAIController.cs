@@ -23,6 +23,14 @@ public sealed class MonsterAIController : MonoBehaviour
     private Transform target;
     private Health targetHealth;
     private AIState currentState;
+    private bool engaged;
+
+    // Chases the target from anywhere, not only once it comes within aggro
+    // range - for monsters spawned into a fight already going on.
+    public void Engage()
+    {
+        engaged = true;
+    }
 
     private void Awake()
     {
@@ -120,7 +128,7 @@ public sealed class MonsterAIController : MonoBehaviour
         switch (currentState)
         {
             case AIState.Idle:
-                if (distance <= aggroRange)
+                if (engaged || distance <= aggroRange)
                 {
                     ChangeState(AIState.Chase);
                 }
