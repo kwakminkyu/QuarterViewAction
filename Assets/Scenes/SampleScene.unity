@@ -1581,10 +1581,6 @@ PrefabInstance:
       propertyPath: m_Material
       value: 
       objectReference: {fileID: 1652115445}
-    - target: {fileID: 3955136417628282131, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
-      propertyPath: attackBufferDuration
-      value: 0.15
-      objectReference: {fileID: 0}
     - target: {fileID: 8914209181927161043, guid: 796292fa2deccb2429993a63d98992ef, type: 3}
       propertyPath: m_Name
       value: Player
