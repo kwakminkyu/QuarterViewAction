@@ -13,6 +13,10 @@ using UnityEngine.Playables;
 // and SlashEffect through reflection instead of reimplementing them, so what
 // shows here is what plays at runtime. The trade is that renaming those private
 // members breaks the preview - it is meant to be disposable.
+//
+// The weapon trail is previewed too: the clip is walked pose by pose from its
+// BladeTrailClipDriver window up to the current frame, collecting the points
+// the player's TrailRenderer would have by then.
 public sealed class SlashEffectPreviewWindow : EditorWindow
 {
     private const string ActionPathFormat =
@@ -40,6 +44,24 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     private PlayableGraph poseGraph;
     private AnimationClip poseGraphClip;
 
+    // Empty plays the combo's own clip; otherwise the named clip from the
+    // player's controller, for clips no combo action uses yet.
+    private string clipOverride = "";
+    private bool showSlash = true;
+    private bool showTrail = true;
+
+    // Stands in for the game's frame rate. The ribbon records once per frame
+    // and fills in between with sub-frame samples, so this is the rate play
+    // mode would record at.
+    private float trailSampleRate = 60f;
+    private LineRenderer trailLine;
+    private readonly List<Vector3> trailPoints = new();
+    private readonly List<float> trailPointTimes = new();
+    private readonly List<Vector3> trailSamples = new();
+    private readonly List<float> trailSampleTimes = new();
+    private readonly List<int> trailOwners = new();
+    private readonly List<Vector3> trailLinePoints = new();
+
     [MenuItem("Tools/Slash Effect Preview")]
     private static void Open()
     {
@@ -62,7 +84,8 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     // active and actually hitting, grey outside that window.
     private void DrawHitbox(SceneView view)
     {
-        if (!previewing || player == null || Event.current.type != EventType.Repaint)
+        if (!previewing || !showSlash || player == null ||
+            Event.current.type != EventType.Repaint)
         {
             return;
         }
@@ -133,7 +156,8 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     {
         EditorGUILayout.HelpBox(
             "Scrubs a combo clip in edit mode and places the authored slash " +
-            "exactly where the runtime would. Nothing is saved to the scene.",
+            "and the blade trail exactly where the runtime would. Nothing is " +
+            "saved to the scene.",
             MessageType.None);
 
         if (player == null)
@@ -141,15 +165,42 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             player = GameObject.Find("Player");
         }
 
+        if (player == null)
+        {
+            BladeTrailClipDriver driver =
+                FindAnyObjectByType<BladeTrailClipDriver>();
+
+            if (driver != null)
+            {
+                player = driver.transform.root.gameObject;
+            }
+        }
+
         using (new EditorGUI.DisabledScope(previewing))
         {
             player = (GameObject)EditorGUILayout.ObjectField(
                 "Player", player, typeof(GameObject), true);
             comboIndex = EditorGUILayout.IntSlider("Combo", comboIndex, 1, 4);
+            clipOverride = DrawClipPopup(clipOverride);
         }
 
+        EditorGUI.BeginChangeCheck();
+        showSlash = EditorGUILayout.Toggle("Show Slash", showSlash);
+        showTrail = EditorGUILayout.Toggle("Show Trail", showTrail);
+        trailSampleRate = Mathf.Max(
+            1f,
+            EditorGUILayout.FloatField(
+                new GUIContent(
+                    "Trail Sample Rate",
+                    "Frames per second the trail is recorded at, standing " +
+                    "in for the game's frame rate."),
+                trailSampleRate));
+        bool togglesChanged = EditorGUI.EndChangeCheck();
+
         SkillAction action = LoadAction(comboIndex);
-        AnimationClip clip = LoadClip(comboIndex);
+        AnimationClip clip = string.IsNullOrEmpty(clipOverride)
+            ? LoadClip(comboIndex)
+            : FindControllerClip(clipOverride);
 
         if (player == null || action == null || clip == null)
         {
@@ -160,6 +211,8 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             return;
         }
 
+        DrawTrailRange(clip);
+        EditorGUILayout.Space();
         DrawTimingInfo(action, clip);
         EditorGUILayout.Space();
 
@@ -172,7 +225,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
                 "Discard the clip's root travel, as play mode does with " +
                 "root motion off."),
             keepInPlace);
-        bool frameChanged = EditorGUI.EndChangeCheck();
+        bool frameChanged = EditorGUI.EndChangeCheck() || togglesChanged;
 
         EditorGUILayout.BeginHorizontal();
 
@@ -287,6 +340,119 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
                     MessageType.Warning);
             }
         }
+
+        DrawTrailInfo(clip);
+    }
+
+    // Edits the driver's window for this clip in place, so the range picked
+    // while scrubbing is the one play mode records over. Goes through a
+    // SerializedObject, which makes every change undoable.
+    private void DrawTrailRange(AnimationClip clip)
+    {
+        BladeTrailClipDriver driver = FindTrailDriver();
+
+        if (driver == null)
+        {
+            return;
+        }
+
+        var serialized = new SerializedObject(driver);
+        SerializedProperty windows = serialized.FindProperty("windows");
+        int index = FindWindowIndex(windows, clip.name);
+        int lastFrame = Mathf.RoundToInt(
+            clip.length * BladeTrailClipDriver.FrameRate);
+
+        EditorGUILayout.LabelField(
+            "Trail Range (frames @30fps)", EditorStyles.boldLabel);
+
+        if (index < 0)
+        {
+            if (GUILayout.Button("Add Trail Window for '" + clip.name + "'"))
+            {
+                index = windows.arraySize;
+                windows.arraySize++;
+
+                SerializedProperty added = windows.GetArrayElementAtIndex(index);
+                added.FindPropertyRelative("clipName").stringValue = clip.name;
+                added.FindPropertyRelative("startFrame").floatValue = 0f;
+                added.FindPropertyRelative("endFrame").floatValue = lastFrame;
+
+                serialized.ApplyModifiedProperties();
+            }
+
+            return;
+        }
+
+        SerializedProperty window = windows.GetArrayElementAtIndex(index);
+        SerializedProperty startProperty = window.FindPropertyRelative("startFrame");
+        SerializedProperty endProperty = window.FindPropertyRelative("endFrame");
+
+        float start = startProperty.floatValue;
+        float end = endProperty.floatValue;
+
+        EditorGUI.BeginChangeCheck();
+
+        EditorGUILayout.MinMaxSlider(
+            "Frames", ref start, ref end, 0f, lastFrame);
+
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            EditorGUILayout.PrefixLabel(" ");
+            start = EditorGUILayout.IntField(Mathf.RoundToInt(start));
+            GUILayout.Label("..", GUILayout.ExpandWidth(false));
+            end = EditorGUILayout.IntField(Mathf.RoundToInt(end));
+            GUILayout.Label("/ " + lastFrame, GUILayout.ExpandWidth(false));
+        }
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            // Whole frames only: that is how animation frames are talked about,
+            // and a slider drag would otherwise leave fractions behind.
+            int startFrame = Mathf.Clamp(Mathf.RoundToInt(start), 0, lastFrame);
+            int endFrame = Mathf.Clamp(Mathf.RoundToInt(end), startFrame, lastFrame);
+
+            startProperty.floatValue = startFrame;
+            endProperty.floatValue = endFrame;
+            serialized.ApplyModifiedProperties();
+        }
+    }
+
+    private static int FindWindowIndex(SerializedProperty windows, string clipName)
+    {
+        for (int i = 0; i < windows.arraySize; i++)
+        {
+            if (windows.GetArrayElementAtIndex(i)
+                    .FindPropertyRelative("clipName").stringValue == clipName)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private BladeTrailClipDriver FindTrailDriver()
+    {
+        return player != null
+            ? player.GetComponentInChildren<BladeTrailClipDriver>(true)
+            : null;
+    }
+
+    private void DrawTrailInfo(AnimationClip clip)
+    {
+        if (!TryGetTrailWindow(clip, out BladeTrailClipDriver.ClipWindow window))
+        {
+            EditorGUILayout.LabelField(
+                "  trail", "no BladeTrailClipDriver window for '" + clip.name + "'");
+            return;
+        }
+
+        ResolveTrailSpan(in window, clip, out float start, out float end);
+
+        EditorGUILayout.LabelField(
+            "  trail",
+            "f" + (start * ClipFrameRate).ToString("F1") + " .. f" +
+            (end * ClipFrameRate).ToString("F1"));
     }
 
     private void StartPreview()
@@ -302,23 +468,19 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         CharacterEffectSpawner spawner =
             player.GetComponent<CharacterEffectSpawner>();
 
-        if (spawner == null)
+        if (spawner != null)
         {
-            Debug.LogError(
-                "Preview needs a CharacterEffectSpawner on the Player.");
-            return;
+            // Awake never runs in edit mode, so the spawner's cached
+            // references are still null. Run it by hand before asking it to
+            // place anything.
+            InvokeHidden(spawner, "Awake");
         }
 
-        // Awake never runs in edit mode, so the spawner's cached references are
-        // still null. Run it by hand before asking it to place anything.
-        InvokeHidden(spawner, "Awake");
-
-        var prefab = (SlashEffect)
-            Field(typeof(CharacterEffectSpawner), "slashPrefab").GetValue(spawner);
-
-        if (prefab == null)
+        if (showSlash && !HasSlashPrefab(spawner))
         {
-            Debug.LogError("The spawner has no slash prefab assigned.");
+            Debug.LogError(
+                "Preview needs a CharacterEffectSpawner with a slash prefab " +
+                "on the Player. Turn Show Slash off to preview only the trail.");
             return;
         }
 
@@ -342,6 +504,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         }
 
         instances.Clear();
+        DestroyTrailInstance();
         previewing = false;
         DestroyPoseGraph();
     }
@@ -356,12 +519,20 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         // Pose the character first; placement reads the posed transforms.
         SamplePose(clip, frame / ClipFrameRate);
 
+        // The trail walks the pose through its own window and leaves it on
+        // this frame again, so it goes before anything reads the pose.
+        ApplyTrail(clip);
+
         CharacterEffectSpawner spawner =
             player.GetComponent<CharacterEffectSpawner>();
 
         // An action can fire several effects at different delays, so the
         // preview needs one instance per entry rather than a single one.
-        EnsureInstances(action.effects == null ? 0 : action.effects.Length, spawner);
+        int effectCount = showSlash && HasSlashPrefab(spawner) &&
+            action.effects != null
+                ? action.effects.Length
+                : 0;
+        EnsureInstances(effectCount, spawner);
 
         float activeStartF = action.startupDuration * ClipFrameRate;
 
@@ -415,11 +586,10 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
     private void EnsureInstances(int count, CharacterEffectSpawner spawner)
     {
-        var prefab = (SlashEffect)
-            Field(typeof(CharacterEffectSpawner), "slashPrefab").GetValue(spawner);
-
         while (instances.Count < count)
         {
+            var prefab = (SlashEffect)
+                Field(typeof(CharacterEffectSpawner), "slashPrefab").GetValue(spawner);
             SlashEffect created = Instantiate(prefab);
             created.name = "SlashPreview " + instances.Count + " (temporary)";
             created.gameObject.hideFlags = HideFlags.HideAndDontSave;
@@ -438,6 +608,285 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
             instances.RemoveAt(last);
         }
+    }
+
+    // Rebuilds the trail as play mode would have it on this frame. A
+    // TrailRenderer only simulates in play, so its points are worked out here
+    // the way the driver lays them - one tip sample per game frame joined by
+    // its spline, dropped once older than Time - and drawn by a LineRenderer
+    // carrying the same width, colour and material.
+    // Rebuilt from scratch on every call, so scrubbing backwards is as exact
+    // as playing forwards.
+    private void ApplyTrail(AnimationClip clip)
+    {
+        BladeTrailClipDriver driver = FindTrailDriver();
+        TrailRenderer sourceRenderer = driver != null
+            ? (TrailRenderer)Field(typeof(BladeTrailClipDriver), "trail").GetValue(driver)
+            : null;
+
+        if (sourceRenderer == null && player != null)
+        {
+            sourceRenderer = player.GetComponentInChildren<TrailRenderer>(true);
+        }
+
+        if (!showTrail || sourceRenderer == null ||
+            !TryGetTrailWindow(clip, out BladeTrailClipDriver.ClipWindow window))
+        {
+            HideTrail();
+            return;
+        }
+
+        ResolveTrailSpan(in window, clip, out float start, out float end);
+        float time = frame / ClipFrameRate;
+
+        if (time < start || time - end > sourceRenderer.time)
+        {
+            HideTrail();
+            return;
+        }
+
+        trailPoints.Clear();
+        trailPointTimes.Clear();
+
+        float recordUntil = Mathf.Min(time, end);
+        float step = 1f / trailSampleRate;
+        int steps = Mathf.CeilToInt((recordUntil - start) / step);
+        Transform tip = sourceRenderer.transform;
+
+        trailSamples.Clear();
+        trailSampleTimes.Clear();
+
+        for (int i = 0; i <= steps; i++)
+        {
+            float sampleTime = Mathf.Min(start + i * step, recordUntil);
+            SamplePose(clip, sampleTime);
+            trailSamples.Add(tip.position);
+            trailSampleTimes.Add(sampleTime);
+        }
+
+        // The driver's own layout, so the preview draws the curve play mode
+        // would: every point is laid by the driver, none by the renderer.
+        BladeTrailClipDriver.BuildTrail(
+            trailSamples,
+            driver != null ? driver.PointSpacing : 0.03f,
+            trailPoints,
+            trailOwners);
+
+        for (int i = 0; i < trailOwners.Count; i++)
+        {
+            trailPointTimes.Add(trailSampleTimes[trailOwners[i]]);
+        }
+
+        // The walk above left the body at the end of the recording.
+        SamplePose(clip, time);
+
+        // While emitting, the trail's head stays on the blade between points.
+        bool emitting = time <= end;
+        Vector3 head = tip.position;
+
+        // Not ??=: that skips Unity's null check and keeps a destroyed one.
+        if (trailLine == null)
+        {
+            trailLine = CreateTrailLine();
+        }
+
+        CopyTrailLook(sourceRenderer, trailLine);
+
+        // Newest first: a TrailRenderer's width and colour run from the
+        // emitter (0) back to the tail (1).
+        trailLinePoints.Clear();
+
+        if (emitting)
+        {
+            trailLinePoints.Add(head);
+        }
+
+        for (int i = trailPoints.Count - 1; i >= 0; i--)
+        {
+            if (time - trailPointTimes[i] > sourceRenderer.time)
+            {
+                break;
+            }
+
+            trailLinePoints.Add(trailPoints[i]);
+        }
+
+        if (trailLinePoints.Count < 2)
+        {
+            HideTrail();
+            return;
+        }
+
+        trailLine.positionCount = trailLinePoints.Count;
+        trailLine.SetPositions(trailLinePoints.ToArray());
+        trailLine.enabled = true;
+    }
+
+    private void HideTrail()
+    {
+        if (trailLine != null)
+        {
+            trailLine.enabled = false;
+        }
+    }
+
+    private static LineRenderer CreateTrailLine()
+    {
+        var go = new GameObject("WeaponTrailPreview (temporary)");
+        go.hideFlags = HideFlags.HideAndDontSave;
+
+        var line = go.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.loop = false;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        return line;
+    }
+
+    // Read every time rather than once, so edits to the TrailRenderer show up
+    // while scrubbing.
+    private static void CopyTrailLook(TrailRenderer from, LineRenderer to)
+    {
+        to.sharedMaterial = from.sharedMaterial;
+        to.widthCurve = from.widthCurve;
+        to.widthMultiplier = from.widthMultiplier;
+        to.colorGradient = from.colorGradient;
+        to.alignment = from.alignment;
+        to.textureMode = from.textureMode;
+        to.textureScale = from.textureScale;
+        to.numCornerVertices = from.numCornerVertices;
+        to.numCapVertices = from.numCapVertices;
+    }
+
+    private void DestroyTrailInstance()
+    {
+        if (trailLine == null)
+        {
+            return;
+        }
+
+        DestroyImmediate(trailLine.gameObject);
+        trailLine = null;
+    }
+
+    private bool TryGetTrailWindow(
+        AnimationClip clip,
+        out BladeTrailClipDriver.ClipWindow window)
+    {
+        window = default;
+
+        BladeTrailClipDriver driver = FindTrailDriver();
+
+        if (driver == null || clip == null)
+        {
+            return false;
+        }
+
+        var windows = (BladeTrailClipDriver.ClipWindow[])
+            Field(typeof(BladeTrailClipDriver), "windows").GetValue(driver);
+
+        if (windows == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < windows.Length; i++)
+        {
+            if (windows[i].clipName == clip.name)
+            {
+                window = windows[i];
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // The window in seconds of clip time, counting its frames at the
+    // driver's rate as the driver does.
+    private static void ResolveTrailSpan(
+        in BladeTrailClipDriver.ClipWindow window,
+        AnimationClip clip,
+        out float start,
+        out float end)
+    {
+        const float rate = BladeTrailClipDriver.FrameRate;
+
+        start = window.startFrame / rate;
+        end = Mathf.Min(window.endFrame / rate, clip.length);
+    }
+
+    private static bool HasSlashPrefab(CharacterEffectSpawner spawner)
+    {
+        return spawner != null &&
+            Field(typeof(CharacterEffectSpawner), "slashPrefab")
+                .GetValue(spawner) != null;
+    }
+
+    private string DrawClipPopup(string current)
+    {
+        AnimationClip[] clips = ControllerClips();
+        var labels = new string[clips.Length + 1];
+        labels[0] = "Combo " + comboIndex + " clip";
+        int selected = 0;
+
+        for (int i = 0; i < clips.Length; i++)
+        {
+            labels[i + 1] = clips[i].name;
+
+            if (clips[i].name == current)
+            {
+                selected = i + 1;
+            }
+        }
+
+        selected = EditorGUILayout.Popup(
+            new GUIContent(
+                "Clip",
+                "Any clip on the player's controller, for clips no combo " +
+                "action plays yet. The slash and hitbox still come from Combo."),
+            selected,
+            labels);
+
+        return selected == 0 ? "" : clips[selected - 1].name;
+    }
+
+    private AnimationClip FindControllerClip(string clipName)
+    {
+        foreach (AnimationClip clip in ControllerClips())
+        {
+            if (clip.name == clipName)
+            {
+                return clip;
+            }
+        }
+
+        return null;
+    }
+
+    private AnimationClip[] ControllerClips()
+    {
+        Animator found = player != null
+            ? player.GetComponentInChildren<Animator>()
+            : null;
+
+        if (found == null || found.runtimeAnimatorController == null)
+        {
+            return System.Array.Empty<AnimationClip>();
+        }
+
+        var unique = new List<AnimationClip>();
+
+        foreach (AnimationClip clip in found.runtimeAnimatorController.animationClips)
+        {
+            if (clip != null && !unique.Contains(clip))
+            {
+                unique.Add(clip);
+            }
+        }
+
+        unique.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+        return unique.ToArray();
     }
 
     private static FieldInfo Field(System.Type type, string name)
