@@ -50,6 +50,12 @@ public sealed class SkillController : MonoBehaviour
     public event Action<SkillAction> ActionStarted;
     public event Action SkillEnded;
 
+    // Raised on every phase change of the running action, including the
+    // startup each action opens with, which comes before its ActionStarted.
+    // Raised from inside the update loop: listeners must not start or cancel
+    // skills in response.
+    public event Action<SkillPhase> PhaseChanged;
+
     public bool IsExecuting => currentSkill != null;
     public bool IsLocked => lockCount > 0;
     public SkillDefinition CurrentSkillDefinition =>
@@ -512,6 +518,7 @@ public sealed class SkillController : MonoBehaviour
     {
         currentPhase = phase;
         phaseElapsedTime = 0f;
+        PhaseChanged?.Invoke(phase);
     }
 
     private static float GetPhaseDuration(

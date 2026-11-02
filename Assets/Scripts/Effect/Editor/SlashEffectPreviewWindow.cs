@@ -105,7 +105,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         Quaternion rotation = Quaternion.LookRotation(facing, Vector3.up);
         Vector3 centre = player.transform.position + rotation * action.centerOffset;
 
-        float activeStart = action.startupDuration * ClipFrameRate;
+        float activeStart = action.ClipActiveStartTime * ClipFrameRate;
         float activeEnd = activeStart + action.activeDuration * ClipFrameRate;
         bool active = frame >= activeStart && frame <= activeEnd;
 
@@ -296,7 +296,9 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     // finishes, and that is far easier to see here than to reason about.
     private void DrawTimingInfo(SkillAction action, AnimationClip clip)
     {
-        float startupF = action.startupDuration * ClipFrameRate;
+        // In clip frames: a startup played at another speed shifts where the
+        // active phase sits in the clip, not how long the startup lasts.
+        float startupF = action.ClipActiveStartTime * ClipFrameRate;
         float activeEndF = startupF + action.activeDuration * ClipFrameRate;
         float skillEndF = activeEndF + action.recoveryDuration * ClipFrameRate;
 
@@ -534,7 +536,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
                 : 0;
         EnsureInstances(effectCount, spawner);
 
-        float activeStartF = action.startupDuration * ClipFrameRate;
+        float activeStartF = action.ClipActiveStartTime * ClipFrameRate;
 
         for (int i = 0; i < instances.Count; i++)
         {

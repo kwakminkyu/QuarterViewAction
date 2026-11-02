@@ -48,6 +48,7 @@ public sealed class CharacterAnimator : MonoBehaviour
         if (skillController != null)
         {
             skillController.ActionStarted += OnActionStarted;
+            skillController.PhaseChanged += OnPhaseChanged;
             skillController.SkillEnded += OnSkillEnded;
         }
 
@@ -74,6 +75,7 @@ public sealed class CharacterAnimator : MonoBehaviour
         if (skillController != null)
         {
             skillController.ActionStarted -= OnActionStarted;
+            skillController.PhaseChanged -= OnPhaseChanged;
             skillController.SkillEnded -= OnSkillEnded;
         }
 
@@ -124,7 +126,21 @@ public sealed class CharacterAnimator : MonoBehaviour
         // through the AnyState return transition.
         animator.ResetTrigger(ActionEndHash);
         animator.Play(stateHash, 0, 0f);
+
+        // Held until the startup ends, so the hit the clip shows lands as the
+        // active phase opens.
+        animator.speed = action.StartupAnimationSpeed;
         isPlayingAction = true;
+    }
+
+    private void OnPhaseChanged(SkillPhase phase)
+    {
+        if (isDead || phase == SkillPhase.Startup)
+        {
+            return;
+        }
+
+        animator.speed = 1f;
     }
 
     // The stagger has already cancelled the running skill, so its SkillEnded
@@ -136,6 +152,7 @@ public sealed class CharacterAnimator : MonoBehaviour
             return;
         }
 
+        animator.speed = 1f;
         animator.ResetTrigger(ActionEndHash);
         animator.Play(HitHash, 0, 0f);
         isPlayingAction = true;
@@ -144,8 +161,16 @@ public sealed class CharacterAnimator : MonoBehaviour
     // Also the end of a stagger: both return to locomotion the same way.
     private void OnSkillEnded()
     {
+        if (isDead)
+        {
+            return;
+        }
+
+        // A skill cut off in its startup never reached the active phase.
+        animator.speed = 1f;
+
         // A skill that played nothing has nothing to return from.
-        if (isDead || !isPlayingAction)
+        if (!isPlayingAction)
         {
             return;
         }
@@ -169,6 +194,7 @@ public sealed class CharacterAnimator : MonoBehaviour
 
         if (animator.HasState(0, DeathHash))
         {
+            animator.speed = 1f;
             animator.Play(DeathHash, 0, 0f);
         }
         else

@@ -49,6 +49,13 @@ public abstract class SkillAction : ScriptableObject
     // the action. Empty plays nothing and leaves the current motion alone.
     public string animationState;
 
+    // Where the clip shows the hit landing, in seconds at normal speed. When
+    // set, the startup plays the clip at whatever speed brings that moment
+    // exactly to the active phase opening, so the startup can be retimed
+    // without re-exporting the motion; from the active phase on the clip
+    // plays at normal speed. 0 plays it at normal speed throughout.
+    [Min(0f)] public float animationStartupTime;
+
     public SkillMovementSettings movementSettings;
 
     // Optional, and on the base so any action type can opt in without a
@@ -63,6 +70,17 @@ public abstract class SkillAction : ScriptableObject
 
     public bool HasAnimation => !string.IsNullOrEmpty(animationState);
     public int AnimationStateHash => animationStateHash;
+
+    // Animator speed through the startup; 1 everywhere else.
+    public float StartupAnimationSpeed =>
+        animationStartupTime > 0f && startupDuration > 0f
+            ? animationStartupTime / startupDuration
+            : 1f;
+
+    // Where the active phase opens in clip time, for tools that line the
+    // clip up against the action's phases.
+    public float ClipActiveStartTime =>
+        animationStartupTime > 0f ? animationStartupTime : startupDuration;
 
     protected virtual void OnEnable()
     {

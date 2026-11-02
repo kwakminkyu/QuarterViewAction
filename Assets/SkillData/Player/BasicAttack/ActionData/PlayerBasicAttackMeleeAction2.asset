@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90c8e08c88064c06a30b760fed38b32a, type: 3}
   m_Name: PlayerBasicAttackMeleeAction2
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
-  startupDuration: 0.1
-  activeDuration: 0.1
-  recoveryDuration: 0.33333334
+  startupDuration: 0.2
+  activeDuration: 0.13333334
+  recoveryDuration: 0.2
   recoveryCancelDelay: 0.1
   comboInputWindow: 0
-  animationState: BasicCombo2
+  animationState: NewA2
+  animationStartupTime: 0
   movementSettings:
     phases: 3
     mode: 1
