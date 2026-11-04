@@ -125,16 +125,11 @@ public sealed class CharacterMovement : MonoBehaviour
         skillVelocity = velocity;
     }
 
-    public void MoveBySkillFollowingInput(float speedMultiplier)
+    // Walking velocity from the current move input, scaled, for a skill that
+    // lets its user steer; zero while locked, since Move then holds no input.
+    public Vector3 GetInputVelocity(float speedMultiplier)
     {
-        if (!isSkillControlling)
-        {
-            return;
-        }
-
-        Vector3 velocity = MoveDirection * moveSpeed * speedMultiplier;
-        velocity.y = 0f;
-        skillVelocity = velocity;
+        return MoveDirection * moveSpeed * speedMultiplier;
     }
 
     public void EndSkillControl()

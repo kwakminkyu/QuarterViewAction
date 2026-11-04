@@ -145,7 +145,8 @@ public sealed class SkillController : MonoBehaviour
                 return true;
             }
 
-            if (!CanStartDuringRecovery(skill) ||
+            if (!(CanStartDuringRecovery(skill) ||
+                    skill.Definition.CanInterrupt(currentSkill.Definition)) ||
                 !CanBeginSkill(skill))
             {
                 return false;

@@ -16,10 +16,11 @@ MonoBehaviour:
   activeDuration: 0.18
   recoveryDuration: 0
   recoveryCancelDelay: 0
+  comboInputWindow: 0
   animationState: Dash
+  animationStartupTime: 0
   movementSettings:
     phases: 2
-    mode: 0
-    lungeDistance: 3
+    lungeDistance: 2.5
     moveSpeedMultiplier: 0
   effects: []

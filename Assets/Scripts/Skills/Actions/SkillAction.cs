@@ -10,17 +10,15 @@ public enum SkillMovementPhases
     Recovery = 1 << 2,
 }
 
-public enum SkillMovementMode
-{
-    FixedLunge,
-    SpeedMultiplier,
-}
-
+// Both parts apply together in the chosen phases, and each is off at 0: a
+// lunge carries the character along the attack direction, and the multiplier
+// lets the player steer at that fraction of walking speed (1 = full speed).
 [Serializable]
 public struct SkillMovementSettings
 {
     public SkillMovementPhases phases;
-    public SkillMovementMode mode;
+
+    // Covered within each chosen phase, not split across them.
     [Min(0f)] public float lungeDistance;
     [Min(0f)] public float moveSpeedMultiplier;
 }
@@ -68,8 +66,7 @@ public abstract class SkillAction : ScriptableObject
 
     [NonSerialized] private int animationStateHash;
 
-    public bool HasAnimation => !string.IsNullOrEmpty(animationState);
-    public int AnimationStateHash => animationStateHash;
+    public bool HasAnimation => !string.IsNullOrEmpty(animationState);    public int AnimationStateHash => animationStateHash;
 
     // Animator speed through the startup; 1 everywhere else.
     public float StartupAnimationSpeed =>
@@ -117,21 +114,15 @@ public abstract class SkillAction : ScriptableObject
             return;
         }
 
-        switch (movementSettings.mode)
-        {
-            case SkillMovementMode.FixedLunge:
-                ApplyLunge(
-                    in context,
-                    ResolveFlatDirection(in context),
-                    movementSettings.lungeDistance,
-                    phaseDuration);
-                break;
+        Vector3 velocity =
+            LungeVelocity(
+                in context,
+                movementSettings.lungeDistance,
+                phaseDuration) +
+            context.Movement.GetInputVelocity(
+                movementSettings.moveSpeedMultiplier);
 
-            case SkillMovementMode.SpeedMultiplier:
-                context.Movement.MoveBySkillFollowingInput(
-                    movementSettings.moveSpeedMultiplier);
-                break;
-        }
+        context.Movement.MoveBySkill(velocity);
     }
 
     // The ground the action's hit will cover, for warning about it ahead of
@@ -147,7 +138,6 @@ public abstract class SkillAction : ScriptableObject
     // How far the action carries its user forward while its hit is out, so a
     // warning can cover where a lunging hit will land.
     public float ActiveLungeDistance =>
-        movementSettings.mode == SkillMovementMode.FixedLunge &&
         (movementSettings.phases & SkillMovementPhases.Active) != 0
             ? movementSettings.lungeDistance
             : 0f;
@@ -201,9 +191,11 @@ public abstract class SkillAction : ScriptableObject
             : direction.normalized;
     }
 
-    protected void ApplyLunge(
+    // The velocity that covers this frame's share of the phase's lunge. The
+    // share is measured in the phase's own time, which can be less than a
+    // whole frame when the phase opens or closes mid-frame.
+    private static Vector3 LungeVelocity(
         in SkillActionContext context,
-        Vector3 direction,
         float distance,
         float phaseDuration)
     {
@@ -212,13 +204,13 @@ public abstract class SkillAction : ScriptableObject
             context.DeltaTime <= Mathf.Epsilon ||
             Time.deltaTime <= Mathf.Epsilon)
         {
-            return;
+            return Vector3.zero;
         }
 
         float phaseDistance =
             distance * context.DeltaTime / phaseDuration;
         float frameSpeed = phaseDistance / Time.deltaTime;
 
-        context.Movement.MoveBySkill(direction.normalized * frameSpeed);
+        return ResolveFlatDirection(in context) * frameSpeed;
     }
 }

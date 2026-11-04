@@ -3408,13 +3408,13 @@ MonoBehaviour:
   trail: {fileID: 1039735300}
   pointSpacing: 0.03
   windows:
-  - clipName: NewA1
+  - clipName: BasicAttack1
     startFrame: 3
     endFrame: 5
-  - clipName: NewA2
+  - clipName: BasicAttack2
     startFrame: 6
     endFrame: 9
-  - clipName: NewA3
+  - clipName: BasicAttack3
     startFrame: 10
     endFrame: 13
 --- !u!1 &253954464162385956

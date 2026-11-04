@@ -17,13 +17,12 @@ MonoBehaviour:
   recoveryDuration: 0.2
   recoveryCancelDelay: 0.1
   comboInputWindow: 0
-  animationState: NewA2
+  animationState: BasicCombo2
   animationStartupTime: 0
   movementSettings:
-    phases: 3
-    mode: 1
+    phases: 2
     lungeDistance: 0
-    moveSpeedMultiplier: 0.5
+    moveSpeedMultiplier: 0.8
   effects:
   - enabled: 1
     delay: 0
@@ -78,5 +77,5 @@ MonoBehaviour:
       m_PostInfinity: 0
       m_RotationOrder: 0
   attackData: {fileID: 11400000, guid: 066f0b50f528419b9f74fd323f2a78eb, type: 2}
-  centerOffset: {x: 0, y: 0.9, z: 0.6}
+  centerOffset: {x: 0, y: 0.9, z: 0.8}
   invulnerableUntilSkillEnds: 0

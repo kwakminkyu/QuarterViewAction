@@ -20,9 +20,8 @@ MonoBehaviour:
   animationState: BasicCombo3
   animationStartupTime: 0
   movementSettings:
-    phases: 3
-    mode: 1
-    lungeDistance: 0
+    phases: 2
+    lungeDistance: 0.7
     moveSpeedMultiplier: 0.7
   effects:
   - enabled: 1
@@ -78,5 +77,5 @@ MonoBehaviour:
       m_PostInfinity: 0
       m_RotationOrder: 0
   attackData: {fileID: 11400000, guid: 6e6b06914b294ff49cb593cd8954f648, type: 2}
-  centerOffset: {x: 0, y: 0.9, z: 0.8}
+  centerOffset: {x: 0, y: 0.9, z: 0.55}
   invulnerableUntilSkillEnds: 0

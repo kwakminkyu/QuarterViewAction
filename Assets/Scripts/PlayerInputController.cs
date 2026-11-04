@@ -8,9 +8,11 @@ using UnityEngine.InputSystem;
 public sealed class PlayerInputController : MonoBehaviour
 {
     private const int BasicAttackSlot = 0;
-    private const int SpecialAttackSlot = 1;
-    private const int DashSlot = 2;
-    private const int UltimateSlot = 3;
+    private const int DashSlot = 1;
+
+    // Not bound to a key: an attack press while dashing uses it instead of
+    // the basic attack.
+    private const int DashAttackSlot = 2;
 
     // How long a refused attack press is kept and retried, so pressing a
     // moment early - at the tail of the last combo hit, or during a dash -
@@ -56,6 +58,18 @@ public sealed class PlayerInputController : MonoBehaviour
 
     private void PressAttack()
     {
+        // Only a fresh press: a press buffered before the dash began is not
+        // aimed at the dash and still waits for the basic attack.
+        if (IsDashing() &&
+            TryUseSkill(
+                DashAttackSlot,
+                "Dash attack",
+                characterAim.AimDirection))
+        {
+            bufferedAttackTime = float.NegativeInfinity;
+            return;
+        }
+
         if (TryUseAttack())
         {
             bufferedAttackTime = float.NegativeInfinity;
@@ -66,22 +80,17 @@ public sealed class PlayerInputController : MonoBehaviour
         }
     }
 
-    public void OnSpecialAttack(InputAction.CallbackContext context)
-    {
-        TryUseSkill(
-            context,
-            SpecialAttackSlot,
-            "Special attack",
-            characterAim.AimDirection);
-    }
-
+    // Along the held direction; with none, where the character faces - after
+    // stopping that is the way it was going, so a standing dash never flips
+    // round toward the cursor.
     public void OnDash(InputAction.CallbackContext context)
     {
         Vector3 direction = GetCameraRelativeMoveDirection(MoveInput);
 
         if (direction.sqrMagnitude <= Mathf.Epsilon)
         {
-            direction = characterAim.AimDirection;
+            direction = transform.forward;
+            direction.y = 0f;
         }
 
         TryUseSkill(
@@ -89,15 +98,6 @@ public sealed class PlayerInputController : MonoBehaviour
             DashSlot,
             "Dash",
             direction);
-    }
-
-    public void OnUltimate(InputAction.CallbackContext context)
-    {
-        TryUseSkill(
-            context,
-            UltimateSlot,
-            "Ultimate",
-            characterAim.AimDirection);
     }
 
     private void Update()
@@ -121,6 +121,14 @@ public sealed class PlayerInputController : MonoBehaviour
             "Basic attack",
             characterAim.AimDirection,
             reportRefusal);
+    }
+
+    private bool IsDashing()
+    {
+        return skillController.IsExecuting &&
+            skillController.SkillSlotCount > DashAttackSlot &&
+            skillController.CurrentSkillDefinition ==
+                skillController.GetSkillInstance(DashSlot).Definition;
     }
 
     // Only presses that nothing else will pick up are kept. Mid-combo, the

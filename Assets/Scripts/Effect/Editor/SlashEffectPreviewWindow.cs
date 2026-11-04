@@ -19,16 +19,15 @@ using UnityEngine.Playables;
 // the player's TrailRenderer would have by then.
 public sealed class SlashEffectPreviewWindow : EditorWindow
 {
-    private const string ActionPathFormat =
-        "Assets/SkillData/Player/BasicAttack/ActionData/PlayerBasicAttackMeleeAction{0}.asset";
-    private const string ClipPathFormat = "Assets/Animation/Clip/BasicCombo{0}.fbx";
     private const float ClipFrameRate = 30f;
 
     private const BindingFlags Hidden =
         BindingFlags.NonPublic | BindingFlags.Instance;
 
     private GameObject player;
-    private int comboIndex = 4;
+    // Into PreviewActions(), which is rebuilt from the player's skills each
+    // time, so it follows whatever is equipped.
+    private int actionIndex;
     private float frame;
     private bool previewing;
 
@@ -44,8 +43,8 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     private PlayableGraph poseGraph;
     private AnimationClip poseGraphClip;
 
-    // Empty plays the combo's own clip; otherwise the named clip from the
-    // player's controller, for clips no combo action uses yet.
+    // Empty plays the action's own clip; otherwise the named clip from the
+    // player's controller, for clips no action uses yet.
     private string clipOverride = "";
     private bool showSlash = true;
     private bool showTrail = true;
@@ -79,7 +78,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         StopPreview();
     }
 
-    // Draws the combo's hit volume where OverlapSkillAction puts it, so it
+    // Draws the action's hit volume where OverlapSkillAction puts it, so it
     // can be matched against the effect by eye. Red while the attack is
     // active and actually hitting, grey outside that window.
     private void DrawHitbox(SceneView view)
@@ -90,7 +89,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             return;
         }
 
-        var action = LoadAction(comboIndex) as OverlapSkillAction;
+        OverlapSkillAction action = SelectedAction();
 
         if (action == null || action.attackData == null)
         {
@@ -155,7 +154,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     private void DrawWindow()
     {
         EditorGUILayout.HelpBox(
-            "Scrubs a combo clip in edit mode and places the authored slash " +
+            "Scrubs a melee action's clip in edit mode and places the authored slash " +
             "and the blade trail exactly where the runtime would. Nothing is " +
             "saved to the scene.",
             MessageType.None);
@@ -180,8 +179,25 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         {
             player = (GameObject)EditorGUILayout.ObjectField(
                 "Player", player, typeof(GameObject), true);
-            comboIndex = EditorGUILayout.IntSlider("Combo", comboIndex, 1, 4);
-            clipOverride = DrawClipPopup(clipOverride);
+            actionIndex = DrawActionPopup(actionIndex);
+            string pickedClip = DrawClipPopup(clipOverride);
+
+            // The hitbox, slash and timing always come from Action, so a clip
+            // that one of the actions plays selects that action instead of
+            // standing over the wrong one's data. Only clips no action plays
+            // stay as an override on the current Action.
+            if (pickedClip != clipOverride)
+            {
+                int playing = ActionPlaying(pickedClip);
+
+                if (playing >= 0)
+                {
+                    actionIndex = playing;
+                    pickedClip = "";
+                }
+            }
+
+            clipOverride = pickedClip;
         }
 
         EditorGUI.BeginChangeCheck();
@@ -197,16 +213,16 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
                 trailSampleRate));
         bool togglesChanged = EditorGUI.EndChangeCheck();
 
-        SkillAction action = LoadAction(comboIndex);
+        SkillAction action = SelectedAction();
         AnimationClip clip = string.IsNullOrEmpty(clipOverride)
-            ? LoadClip(comboIndex)
+            ? ActionClip(action)
             : FindControllerClip(clipOverride);
 
         if (player == null || action == null || clip == null)
         {
             EditorGUILayout.HelpBox(
-                "Needs a Player in the open scene plus the combo's action asset " +
-                "and clip.",
+                "Needs a Player in the open scene with at least one melee " +
+                "action that plays an animator state, and that state's clip.",
                 MessageType.Warning);
             return;
         }
@@ -829,7 +845,9 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     {
         AnimationClip[] clips = ControllerClips();
         var labels = new string[clips.Length + 1];
-        labels[0] = "Combo " + comboIndex + " clip";
+        OverlapSkillAction selectedAction = SelectedAction();
+        labels[0] = (selectedAction != null ? selectedAction.animationState : "Action") +
+            " clip";
         int selected = 0;
 
         for (int i = 0; i < clips.Length; i++)
@@ -845,12 +863,65 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         selected = EditorGUILayout.Popup(
             new GUIContent(
                 "Clip",
-                "Any clip on the player's controller, for clips no combo " +
-                "action plays yet. The slash and hitbox still come from Combo."),
+                "Any clip on the player's controller. A clip one of the " +
+                "actions plays switches Action to it; any other clip plays " +
+                "over the current Action's slash and hitbox."),
             selected,
             labels);
 
         return selected == 0 ? "" : clips[selected - 1].name;
+    }
+
+    // Labelled by the animator state each action plays, which names it
+    // uniquely enough: BasicCombo1..3, DashAttack.
+    private int DrawActionPopup(int current)
+    {
+        List<OverlapSkillAction> actions = PreviewActions();
+
+        if (actions.Count == 0)
+        {
+            EditorGUILayout.Popup("Action", 0, new[] { "(none)" });
+            return 0;
+        }
+
+        var labels = new string[actions.Count];
+
+        for (int i = 0; i < actions.Count; i++)
+        {
+            labels[i] = actions[i].animationState;
+        }
+
+        return EditorGUILayout.Popup(
+            new GUIContent(
+                "Action",
+                "Every melee action of the player's equipped skills that " +
+                "plays an animator state. Its hitbox, slash and timing are " +
+                "the ones previewed."),
+            Mathf.Clamp(current, 0, actions.Count - 1),
+            labels);
+    }
+
+    // Index into PreviewActions() of the action that plays this clip, or -1.
+    private int ActionPlaying(string clipName)
+    {
+        if (string.IsNullOrEmpty(clipName))
+        {
+            return -1;
+        }
+
+        List<OverlapSkillAction> actions = PreviewActions();
+
+        for (int i = 0; i < actions.Count; i++)
+        {
+            AnimationClip clip = ActionClip(actions[i]);
+
+            if (clip != null && clip.name == clipName)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private AnimationClip FindControllerClip(string clipName)
@@ -911,22 +982,82 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         }
     }
 
-    private static SkillAction LoadAction(int combo)
+    // Every melee action the player's equipped skills can play, in slot then
+    // step order - the basic combo's steps, then the dash attack - read from
+    // the player itself so the list follows whatever is equipped.
+    private List<OverlapSkillAction> PreviewActions()
     {
-        return AssetDatabase.LoadAssetAtPath<SkillAction>(
-            string.Format(ActionPathFormat, combo));
+        var actions = new List<OverlapSkillAction>();
+        SkillController skills = player != null
+            ? player.GetComponentInChildren<SkillController>()
+            : null;
+
+        if (skills == null)
+        {
+            return actions;
+        }
+
+        SerializedProperty equipped =
+            new SerializedObject(skills).FindProperty("equippedSkills");
+
+        for (int i = 0; equipped != null && i < equipped.arraySize; i++)
+        {
+            var skill = equipped.GetArrayElementAtIndex(i).objectReferenceValue
+                as SkillDefinition;
+
+            for (int step = 0; skill != null && step < skill.ActionCount; step++)
+            {
+                if (skill.GetAction(step) is OverlapSkillAction overlap &&
+                    overlap.HasAnimation &&
+                    !actions.Contains(overlap))
+                {
+                    actions.Add(overlap);
+                }
+            }
+        }
+
+        return actions;
     }
 
-    private static AnimationClip LoadClip(int combo)
+    private OverlapSkillAction SelectedAction()
     {
-        string path = string.Format(ClipPathFormat, combo);
+        List<OverlapSkillAction> actions = PreviewActions();
 
-        foreach (UnityEngine.Object asset in
-            AssetDatabase.LoadAllAssetsAtPath(path))
+        return actions.Count > 0
+            ? actions[Mathf.Clamp(actionIndex, 0, actions.Count - 1)]
+            : null;
+    }
+
+    // The clip the action really plays: the motion of the state it names on
+    // the player's controller, so the preview follows whatever the state holds.
+    private AnimationClip ActionClip(SkillAction action)
+    {
+        if (action == null || !action.HasAnimation)
         {
-            if (asset is AnimationClip clip && !clip.name.StartsWith("__"))
+            return null;
+        }
+
+        Animator found = player != null
+            ? player.GetComponentInChildren<Animator>()
+            : null;
+
+        var controller = found != null
+            ? found.runtimeAnimatorController as UnityEditor.Animations.AnimatorController
+            : null;
+
+        if (controller == null)
+        {
+            return null;
+        }
+
+        foreach (UnityEditor.Animations.AnimatorControllerLayer layer in controller.layers)
+        {
+            foreach (UnityEditor.Animations.ChildAnimatorState child in layer.stateMachine.states)
             {
-                return clip;
+                if (child.state.name == action.animationState)
+                {
+                    return child.state.motion as AnimationClip;
+                }
             }
         }
 

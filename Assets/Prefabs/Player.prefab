@@ -1297,22 +1297,6 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 3955136417628282131}
         m_TargetAssemblyTypeName: PlayerInputController, Assembly-CSharp
-        m_MethodName: OnSpecialAttack
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: c703b8fe-1a37-439b-908d-8dba33124dea
-    m_ActionName: 'GamePlay/SpecialAttack[/Mouse/rightButton]'
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 3955136417628282131}
-        m_TargetAssemblyTypeName: PlayerInputController, Assembly-CSharp
         m_MethodName: OnDash
         m_Mode: 0
         m_Arguments:
@@ -1325,22 +1309,6 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: bb603e3b-8ce9-447d-96e1-ee80001af2a2
     m_ActionName: 'GamePlay/Dash[/Keyboard/leftShift]'
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 3955136417628282131}
-        m_TargetAssemblyTypeName: PlayerInputController, Assembly-CSharp
-        m_MethodName: OnUltimate
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 139bb2bf-1aa3-4931-bdcb-0cd1892ba43d
-    m_ActionName: 'GamePlay/Ultimate[/Keyboard/q]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: GamePlay
@@ -1402,9 +1370,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillController
   equippedSkills:
   - {fileID: 11400000, guid: 75fac0a7f4794ade8303579310c9e02e, type: 2}
-  - {fileID: 11400000, guid: bd6a02a02d7645d8a4d622469905be17, type: 2}
   - {fileID: 11400000, guid: 00e72aff122e4c90ae4d364dd81e8d98, type: 2}
-  - {fileID: 11400000, guid: c4675423e3b940f99cbadcdbb452dc44, type: 2}
+  - {fileID: 11400000, guid: 7a9d320582158b34f82e826888adde90, type: 2}
 --- !u!114 &5618602702180565126
 MonoBehaviour:
   m_ObjectHideFlags: 0

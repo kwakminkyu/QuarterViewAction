@@ -17,10 +17,10 @@ MonoBehaviour:
   recoveryDuration: 0.2
   recoveryCancelDelay: 0.1
   comboInputWindow: 0
-  animationState: NewA1
+  animationState: BasicCombo1
+  animationStartupTime: 0
   movementSettings:
     phases: -1
-    mode: 1
     lungeDistance: 0
     moveSpeedMultiplier: 0.5
   effects:
