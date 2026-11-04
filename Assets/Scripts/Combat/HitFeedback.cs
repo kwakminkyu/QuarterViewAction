@@ -48,6 +48,6 @@ public static class HitFeedback
 
         // Owned by nobody and tied to no swing: it plays out where it landed
         // and goes back to the pool by itself.
-        impact.Play(null, null, false);
+        impact.Play(null, null, false, false);
     }
 }

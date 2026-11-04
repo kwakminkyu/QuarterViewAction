@@ -26,56 +26,93 @@ MonoBehaviour:
   effects:
   - enabled: 1
     delay: 0
-    mesh: {fileID: 7702104186388461222, guid: bf9446d9e9752e447aa26e48e87a7d08, type: 3}
+    mesh: {fileID: 4300000, guid: d52716b1a0d05d046b79be091ff91149, type: 2}
     prefab: {fileID: 0}
     material: {fileID: 0}
     color: {r: 4, g: 2, b: 1.1, a: 1}
-    duration: 0.12
-    fadeOutDuration: 0.6
-    offset: {x: -0.05, y: 0.5, z: 0.3}
-    scale: {x: 0.9, y: 1, z: 1}
-    swingPlaneNormal: {x: 0, y: 1, z: 0}
-    localEuler: {x: 0, y: 0, z: -100}
+    duration: 0.25
+    fadeOutDuration: 0.15
+    offset: {x: 0, y: 0, z: 0}
+    scale: {x: 1, y: 1, z: 1}
+    swingPlaneNormal: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
     stayInWorld: 0
+    outlivesSkill: 0
     revealSpan: 0.5
     revealSoftness: 0.25
     scaleCurve:
       serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0.7
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 34
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0.33333334
-      - serializedVersion: 3
-        time: 1
-        value: 0.7
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 34
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
-      m_RotationOrder: 0
+      m_RotationOrder: 4
     scaleCurveAxes: {x: 0, y: 0, z: 0}
     alphaCurve:
       serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 0
-      m_PostInfinity: 0
-      m_RotationOrder: 0
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.39999998
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0.35
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     revealCurve:
       serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 0
-      m_PostInfinity: 0
-      m_RotationOrder: 0
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1.6666669
+        outSlope: 1.6666669
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.39999998
+        value: 0.6666667
+        inSlope: 1.6666669
+        outSlope: 1.3888888
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   attackData: {fileID: 11400000, guid: 6e6b06914b294ff49cb593cd8954f648, type: 2}
-  centerOffset: {x: 0, y: 0.9, z: 0.55}
+  centerOffset: {x: 0, y: 0.5, z: 0.55}
   invulnerableUntilSkillEnds: 0

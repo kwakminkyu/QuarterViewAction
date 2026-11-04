@@ -8,8 +8,9 @@ using UnityEngine;
 //     colour, timing and curve fields are hidden;
 //   - a mesh with its own Material is drawn by that shader, which does not
 //     sweep, so the reveal fields are hidden;
-//   - an entry that stays in the world never fades when the swing ends, so
-//     Fade Out Duration is hidden.
+//   - an entry that stays in the world never fades when the swing ends and
+//     already outlives the skill, so Fade Out Duration and Outlives Skill are
+//     hidden.
 // Hidden fields keep their values; they come back if the entry changes kind.
 [CustomPropertyDrawer(typeof(ActionEffectSettings))]
 public sealed class ActionEffectSettingsDrawer : PropertyDrawer
@@ -128,7 +129,7 @@ public sealed class ActionEffectSettingsDrawer : PropertyDrawer
                 continue;
             }
 
-            if (staysInWorld && name == "fadeOutDuration")
+            if (staysInWorld && (name == "fadeOutDuration" || name == "outlivesSkill"))
             {
                 continue;
             }

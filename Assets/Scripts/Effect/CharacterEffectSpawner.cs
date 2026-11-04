@@ -168,7 +168,8 @@ public sealed class CharacterEffectSpawner : MonoBehaviour
         particles.Play(
             this,
             FollowTargetFor(in settings),
-            !settings.stayInWorld);
+            !settings.stayInWorld,
+            settings.outlivesSkill);
     }
 
     // Where an effect entry goes and which way it faces, shared by slashes and

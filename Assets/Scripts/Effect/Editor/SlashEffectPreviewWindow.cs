@@ -14,12 +14,14 @@ using UnityEngine.Playables;
 // shows here is what plays at runtime. The trade is that renaming those private
 // members breaks the preview - it is meant to be disposable.
 //
-// The weapon trail is previewed too: the clip is walked pose by pose from its
-// BladeTrailClipDriver window up to the current frame, collecting the points
-// the player's TrailRenderer would have by then.
+// It also bakes the slash itself from the blade's path over a frame range of
+// the clip (Trajectory Bake); see SlashTrajectoryBaker.
 public sealed class SlashEffectPreviewWindow : EditorWindow
 {
-    private const float ClipFrameRate = 30f;
+    private const float ClipFrameRate = SlashTrajectoryBaker.FrameRate;
+
+    // The empty at the blade's point; the sword it hangs from is the grip.
+    private const string BladeTipName = "BladeTip";
 
     private const BindingFlags Hidden =
         BindingFlags.NonPublic | BindingFlags.Instance;
@@ -47,19 +49,14 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     // player's controller, for clips no action uses yet.
     private string clipOverride = "";
     private bool showSlash = true;
-    private bool showTrail = true;
 
-    // Stands in for the game's frame rate. The ribbon records once per frame
-    // and fills in between with sub-frame samples, so this is the rate play
-    // mode would record at.
-    private float trailSampleRate = 60f;
-    private LineRenderer trailLine;
-    private readonly List<Vector3> trailPoints = new();
-    private readonly List<float> trailPointTimes = new();
-    private readonly List<Vector3> trailSamples = new();
-    private readonly List<float> trailSampleTimes = new();
-    private readonly List<int> trailOwners = new();
-    private readonly List<Vector3> trailLinePoints = new();
+    // Kept per clip in EditorPrefs, since each swing wants its own range and
+    // reach.
+    private SlashTrajectoryBaker.Settings bakeSettings =
+        SlashTrajectoryBaker.Settings.Default;
+    private string bakeSettingsClip;
+    private string bakeReport;
+    private MessageType bakeReportType;
 
     [MenuItem("Tools/Slash Effect Preview")]
     private static void Open()
@@ -155,8 +152,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
     {
         EditorGUILayout.HelpBox(
             "Scrubs a melee action's clip in edit mode and places the authored slash " +
-            "and the blade trail exactly where the runtime would. Nothing is " +
-            "saved to the scene.",
+            "exactly where the runtime would. Nothing is saved to the scene.",
             MessageType.None);
 
         if (player == null)
@@ -166,12 +162,12 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
         if (player == null)
         {
-            BladeTrailClipDriver driver =
-                FindAnyObjectByType<BladeTrailClipDriver>();
+            PlayerInputController input =
+                FindAnyObjectByType<PlayerInputController>();
 
-            if (driver != null)
+            if (input != null)
             {
-                player = driver.transform.root.gameObject;
+                player = input.gameObject;
             }
         }
 
@@ -202,15 +198,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
         EditorGUI.BeginChangeCheck();
         showSlash = EditorGUILayout.Toggle("Show Slash", showSlash);
-        showTrail = EditorGUILayout.Toggle("Show Trail", showTrail);
-        trailSampleRate = Mathf.Max(
-            1f,
-            EditorGUILayout.FloatField(
-                new GUIContent(
-                    "Trail Sample Rate",
-                    "Frames per second the trail is recorded at, standing " +
-                    "in for the game's frame rate."),
-                trailSampleRate));
         bool togglesChanged = EditorGUI.EndChangeCheck();
 
         SkillAction action = SelectedAction();
@@ -227,9 +214,9 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             return;
         }
 
-        DrawTrailRange(clip);
-        EditorGUILayout.Space();
         DrawTimingInfo(action, clip);
+        EditorGUILayout.Space();
+        DrawBake(SelectedAction(), clip);
         EditorGUILayout.Space();
 
         EditorGUI.BeginChangeCheck();
@@ -358,60 +345,127 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
                     MessageType.Warning);
             }
         }
-
-        DrawTrailInfo(clip);
     }
 
-    // Edits the driver's window for this clip in place, so the range picked
-    // while scrubbing is the one play mode records over. Goes through a
-    // SerializedObject, which makes every change undoable.
-    private void DrawTrailRange(AnimationClip clip)
+    // Bakes the action's slash from the blade's path over a frame range of
+    // the clip (SlashTrajectoryBaker). Writes the mesh and the timing into the
+    // action's first effect entry.
+    private void DrawBake(OverlapSkillAction action, AnimationClip clip)
     {
-        BladeTrailClipDriver driver = FindTrailDriver();
-
-        if (driver == null)
+        if (action == null)
         {
             return;
         }
 
-        var serialized = new SerializedObject(driver);
-        SerializedProperty windows = serialized.FindProperty("windows");
-        int index = FindWindowIndex(windows, clip.name);
-        int lastFrame = Mathf.RoundToInt(
-            clip.length * BladeTrailClipDriver.FrameRate);
-
-        EditorGUILayout.LabelField(
-            "Trail Range (frames @30fps)", EditorStyles.boldLabel);
-
-        if (index < 0)
+        if (bakeSettingsClip != clip.name)
         {
-            if (GUILayout.Button("Add Trail Window for '" + clip.name + "'"))
-            {
-                index = windows.arraySize;
-                windows.arraySize++;
-
-                SerializedProperty added = windows.GetArrayElementAtIndex(index);
-                added.FindPropertyRelative("clipName").stringValue = clip.name;
-                added.FindPropertyRelative("startFrame").floatValue = 0f;
-                added.FindPropertyRelative("endFrame").floatValue = lastFrame;
-
-                serialized.ApplyModifiedProperties();
-            }
-
-            return;
+            LoadBakeSettings(clip, action);
+            bakeReport = null;
         }
 
-        SerializedProperty window = windows.GetArrayElementAtIndex(index);
-        SerializedProperty startProperty = window.FindPropertyRelative("startFrame");
-        SerializedProperty endProperty = window.FindPropertyRelative("endFrame");
-
-        float start = startProperty.floatValue;
-        float end = endProperty.floatValue;
+        EditorGUILayout.LabelField("Trajectory Bake", EditorStyles.boldLabel);
 
         EditorGUI.BeginChangeCheck();
+        DrawBakeRange(clip);
+        bakeSettings.innerDistance = EditorGUILayout.FloatField(
+            new GUIContent("Inner (m from grip)", "Where the crescent's inner edge sits along the blade."),
+            bakeSettings.innerDistance);
+        bakeSettings.fitToHitbox = EditorGUILayout.Toggle(
+            new GUIContent(
+                "Fit To Hitbox",
+                "Each moment of the swing reaches exactly to the hitbox's edge seen from " +
+                "above, and nothing is drawn where the blade is outside it."),
+            bakeSettings.fitToHitbox);
+
+        if (bakeSettings.fitToHitbox)
+        {
+            bakeSettings.fitShape = (SlashTrajectoryBaker.FitShape)EditorGUILayout.EnumPopup(
+                new GUIContent(
+                    "Fit Shape",
+                    "Box: the hitbox's own outline, so the arc has straight sides. Arc: seen " +
+                    "from above, the half-ellipse through both back corners and the front's " +
+                    "middle, for a horizontal sweep. Side Arc: seen from the side, the " +
+                    "quarter-ellipse from the tip's highest point down to the front edge on " +
+                    "the ground, for an overhead chop."),
+                bakeSettings.fitShape);
+
+            if (bakeSettings.fitShape == SlashTrajectoryBaker.FitShape.Arc)
+            {
+                bakeSettings.arcCenter = EditorGUILayout.FloatField(
+                    new GUIContent(
+                        "Arc Center (m)",
+                        "How far ahead of the hitbox's back edge the ellipse's centre sits. " +
+                        "0 runs the arc through both back corners; further forward rounds " +
+                        "its sides and curls them in behind."),
+                    bakeSettings.arcCenter);
+                bakeSettings.arcBackRadius = EditorGUILayout.FloatField(
+                    new GUIContent(
+                        "Arc Back Radius (m)",
+                        "The ellipse's radius behind its centre, to pull in the part that " +
+                        "curls round behind the body without changing the front. 0 matches " +
+                        "the front."),
+                    bakeSettings.arcBackRadius);
+                bakeSettings.arcSquareness = EditorGUILayout.Slider(
+                    new GUIContent(
+                        "Arc Squareness",
+                        "2 is an ellipse; higher squares the arc off towards the box's " +
+                        "corners so it fills more of the box."),
+                    bakeSettings.arcSquareness, 2f, 6f);
+            }
+        }
+
+        bakeSettings.reachExtension = EditorGUILayout.FloatField(
+            bakeSettings.fitToHitbox
+                ? new GUIContent("Max Reach Past Tip (m)", "The furthest the hitbox may stretch the arc beyond the tip.")
+                : new GUIContent("Reach Past Tip (m)", "How far the outer edge reaches beyond the tip, towards the hitbox's edge."),
+            bakeSettings.reachExtension);
+        bakeSettings.crescent = EditorGUILayout.Slider(
+            new GUIContent(
+                "Crescent",
+                "Thins the band towards both ends like a crescent moon's horns. 0 is off; " +
+                "higher thins the ends sooner."),
+            bakeSettings.crescent, 0f, 3f);
+        bakeSettings.linger = EditorGUILayout.FloatField(
+            new GUIContent("Linger (s)", "How long the crescent stays after the blade has passed."),
+            bakeSettings.linger);
+        bakeSettings.samplesPerFrame = EditorGUILayout.IntSlider(
+            new GUIContent(
+                "Columns / Frame",
+                "Mesh columns per animation frame; more cuts the arc's curve finer."),
+            bakeSettings.samplesPerFrame, 1, 32);
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            SaveBakeSettings(clip.name);
+        }
+
+        using (new EditorGUI.DisabledScope(!previewing))
+        {
+            if (GUILayout.Button(previewing
+                ? "Bake Slash (into effect 0)"
+                : "Bake (start the preview first)"))
+            {
+                Bake(action, clip);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(bakeReport))
+        {
+            EditorGUILayout.HelpBox(bakeReport, bakeReportType);
+        }
+    }
+
+    // The frames of the clip the blade is swept over, in whole frames, since
+    // that is how animation frames are talked about.
+    private void DrawBakeRange(AnimationClip clip)
+    {
+        int lastFrame = Mathf.RoundToInt(clip.length * ClipFrameRate);
+        float start = bakeSettings.startFrame;
+        float end = bakeSettings.endFrame;
 
         EditorGUILayout.MinMaxSlider(
-            "Frames", ref start, ref end, 0f, lastFrame);
+            new GUIContent("Frames", "The part of the clip the slash is swept over."),
+            ref start, ref end, 0f, lastFrame);
 
         using (new EditorGUILayout.HorizontalScope())
         {
@@ -422,55 +476,177 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
             GUILayout.Label("/ " + lastFrame, GUILayout.ExpandWidth(false));
         }
 
-        if (EditorGUI.EndChangeCheck())
-        {
-            // Whole frames only: that is how animation frames are talked about,
-            // and a slider drag would otherwise leave fractions behind.
-            int startFrame = Mathf.Clamp(Mathf.RoundToInt(start), 0, lastFrame);
-            int endFrame = Mathf.Clamp(Mathf.RoundToInt(end), startFrame, lastFrame);
-
-            startProperty.floatValue = startFrame;
-            endProperty.floatValue = endFrame;
-            serialized.ApplyModifiedProperties();
-        }
+        bakeSettings.startFrame = Mathf.Clamp(Mathf.RoundToInt(start), 0, lastFrame);
+        bakeSettings.endFrame = Mathf.Clamp(
+            Mathf.RoundToInt(end), (int)bakeSettings.startFrame, lastFrame);
     }
 
-    private static int FindWindowIndex(SerializedProperty windows, string clipName)
+    private void Bake(OverlapSkillAction action, AnimationClip clip)
     {
-        for (int i = 0; i < windows.arraySize; i++)
+        Transform tip = FindChild(player.transform, BladeTipName);
+        Transform grip = tip != null ? tip.parent : null;
+
+        if (grip == null)
         {
-            if (windows.GetArrayElementAtIndex(i)
-                    .FindPropertyRelative("clipName").stringValue == clipName)
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-    private BladeTrailClipDriver FindTrailDriver()
-    {
-        return player != null
-            ? player.GetComponentInChildren<BladeTrailClipDriver>(true)
-            : null;
-    }
-
-    private void DrawTrailInfo(AnimationClip clip)
-    {
-        if (!TryGetTrailWindow(clip, out BladeTrailClipDriver.ClipWindow window))
-        {
-            EditorGUILayout.LabelField(
-                "  trail", "no BladeTrailClipDriver window for '" + clip.name + "'");
+            bakeReport = "Needs a '" + BladeTipName + "' at the blade's point, under the sword.";
+            bakeReportType = MessageType.Error;
             return;
         }
 
-        ResolveTrailSpan(in window, clip, out float start, out float end);
+        float start = bakeSettings.startFrame / ClipFrameRate;
+        float end = Mathf.Min(bakeSettings.endFrame / ClipFrameRate, clip.length);
 
-        EditorGUILayout.LabelField(
-            "  trail",
-            "f" + (start * ClipFrameRate).ToString("F1") + " .. f" +
-            (end * ClipFrameRate).ToString("F1"));
+        // Effects fire from the active phase opening at the earliest, so a
+        // range opening before it is cut to it.
+        float activeStart = action.ClipActiveStartTime;
+        bool clipped = start < activeStart;
+        start = Mathf.Max(start, activeStart);
+
+        if (end - start <= 1e-4f)
+        {
+            bakeReport = "The frame range ends before the active phase opens.";
+            bakeReportType = MessageType.Error;
+            return;
+        }
+
+        var spawner = player.GetComponent<CharacterEffectSpawner>();
+        var pivot = spawner != null
+            ? (Transform)Field(typeof(CharacterEffectSpawner), "effectPivot").GetValue(spawner)
+            : null;
+        Vector3 origin = pivot != null ? pivot.position : player.transform.position;
+        Quaternion facing = FlatFacing(player.transform);
+        bool hasHitBox = SlashTrajectoryBaker.TryGetHitBox(
+            action, player.transform.position, origin, facing, out Bounds hitBox);
+
+        if (bakeSettings.fitToHitbox && !hasHitBox)
+        {
+            bakeReport = "Fit To Hitbox needs the action's hit to be a box.";
+            bakeReportType = MessageType.Error;
+            return;
+        }
+
+        Mesh mesh = SlashTrajectoryBaker.Bake(
+            clip,
+            time => SamplePose(clip, time),
+            grip,
+            tip,
+            origin,
+            facing,
+            start,
+            end,
+            in bakeSettings,
+            hitBox);
+
+        SlashTrajectoryBaker.ApplyToAction(
+            action, mesh, start - activeStart, end - start, in bakeSettings);
+
+        // The walk above left the body at the window's end.
+        SamplePose(clip, frame / ClipFrameRate);
+
+        bakeReport = ReachReport(action, mesh, origin, facing) +
+            "\n" + SlashTrajectoryBaker.LastRoughness +
+            (clipped ? "\nThe range opened before the active phase and was cut to it." : "");
+        bakeReportType = MessageType.Info;
+    }
+
+    // How far the crescent's outer edge reaches against the hitbox, in the
+    // character's frame, so Reach Past Tip can be matched to it.
+    private string ReachReport(
+        OverlapSkillAction action,
+        Mesh mesh,
+        Vector3 origin,
+        Quaternion facing)
+    {
+        Vector3[] vertices = mesh.vertices;
+        Vector2[] uv = mesh.uv;
+        float forward = float.MinValue;
+        float back = float.MaxValue;
+        float left = float.MaxValue;
+        float right = float.MinValue;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            if (uv[i].y < 0.999f)
+            {
+                continue;
+            }
+
+            forward = Mathf.Max(forward, vertices[i].z);
+            back = Mathf.Min(back, vertices[i].z);
+            left = Mathf.Min(left, vertices[i].x);
+            right = Mathf.Max(right, vertices[i].x);
+        }
+
+        string report =
+            "Baked " + mesh.name + "\nOuter edge: front " + forward.ToString("F2") +
+            "  back " + back.ToString("F2") + "  x " + left.ToString("F2") +
+            " .. " + right.ToString("F2");
+
+        if (SlashTrajectoryBaker.TryGetHitBox(
+            action, player.transform.position, origin, facing, out Bounds hitBox))
+        {
+            report += "\nHitbox:     front " + hitBox.max.z.ToString("F2") +
+                "  back " + hitBox.min.z.ToString("F2") + "  x " +
+                hitBox.min.x.ToString("F2") + " .. " +
+                hitBox.max.x.ToString("F2");
+        }
+
+        return report;
+    }
+
+    private static Quaternion FlatFacing(Transform root)
+    {
+        Vector3 facing = root.forward;
+        facing.y = 0f;
+
+        return Quaternion.LookRotation(
+            facing.sqrMagnitude > Mathf.Epsilon ? facing.normalized : Vector3.forward,
+            Vector3.up);
+    }
+
+    // A clip baked for the first time starts on its active phase.
+    private void LoadBakeSettings(AnimationClip clip, SkillAction action)
+    {
+        SlashTrajectoryBaker.Settings defaults = SlashTrajectoryBaker.Settings.Default;
+        string key = "SlashTrajectoryBake." + clip.name + ".";
+        float activeStartF = Mathf.Round(action.ClipActiveStartTime * ClipFrameRate);
+        float activeEndF = Mathf.Round(activeStartF + action.activeDuration * ClipFrameRate);
+
+        bakeSettings = new SlashTrajectoryBaker.Settings
+        {
+            startFrame = EditorPrefs.GetFloat(key + "start", activeStartF),
+            endFrame = EditorPrefs.GetFloat(key + "end", activeEndF),
+            innerDistance = EditorPrefs.GetFloat(key + "inner", defaults.innerDistance),
+            reachExtension = EditorPrefs.GetFloat(key + "reach", defaults.reachExtension),
+            fitToHitbox = EditorPrefs.GetBool(key + "fit", defaults.fitToHitbox),
+            arcCenter = EditorPrefs.GetFloat(key + "center", defaults.arcCenter),
+            arcSquareness = EditorPrefs.GetFloat(key + "square", defaults.arcSquareness),
+            crescent = EditorPrefs.GetFloat(key + "crescent", defaults.crescent),
+            arcBackRadius = EditorPrefs.GetFloat(key + "back", defaults.arcBackRadius),
+            fitShape = (SlashTrajectoryBaker.FitShape)EditorPrefs.GetInt(
+                key + "shape", (int)defaults.fitShape),
+            linger = EditorPrefs.GetFloat(key + "linger", defaults.linger),
+            samplesPerFrame = EditorPrefs.GetInt(key + "samples", defaults.samplesPerFrame),
+        };
+        bakeSettingsClip = clip.name;
+    }
+
+    private void SaveBakeSettings(string clipName)
+    {
+        string key = "SlashTrajectoryBake." + clipName + ".";
+
+        EditorPrefs.SetFloat(key + "start", bakeSettings.startFrame);
+        EditorPrefs.SetFloat(key + "end", bakeSettings.endFrame);
+        EditorPrefs.SetFloat(key + "inner", bakeSettings.innerDistance);
+        EditorPrefs.SetFloat(key + "reach", bakeSettings.reachExtension);
+        EditorPrefs.SetBool(key + "fit", bakeSettings.fitToHitbox);
+        EditorPrefs.SetFloat(key + "center", bakeSettings.arcCenter);
+        EditorPrefs.SetFloat(key + "square", bakeSettings.arcSquareness);
+        EditorPrefs.SetFloat(key + "crescent", bakeSettings.crescent);
+        EditorPrefs.SetFloat(key + "back", bakeSettings.arcBackRadius);
+        EditorPrefs.SetInt(key + "shape", (int)bakeSettings.fitShape);
+        EditorPrefs.SetFloat(key + "linger", bakeSettings.linger);
+        EditorPrefs.SetInt(key + "samples", bakeSettings.samplesPerFrame);
     }
 
     private void StartPreview()
@@ -498,7 +674,7 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         {
             Debug.LogError(
                 "Preview needs a CharacterEffectSpawner with a slash prefab " +
-                "on the Player. Turn Show Slash off to preview only the trail.");
+                "on the Player. Turn Show Slash off to preview only the pose.");
             return;
         }
 
@@ -522,7 +698,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         }
 
         instances.Clear();
-        DestroyTrailInstance();
         previewing = false;
         DestroyPoseGraph();
     }
@@ -536,10 +711,6 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
 
         // Pose the character first; placement reads the posed transforms.
         SamplePose(clip, frame / ClipFrameRate);
-
-        // The trail walks the pose through its own window and leaves it on
-        // this frame again, so it goes before anything reads the pose.
-        ApplyTrail(clip);
 
         CharacterEffectSpawner spawner =
             player.GetComponent<CharacterEffectSpawner>();
@@ -628,210 +799,17 @@ public sealed class SlashEffectPreviewWindow : EditorWindow
         }
     }
 
-    // Rebuilds the trail as play mode would have it on this frame. A
-    // TrailRenderer only simulates in play, so its points are worked out here
-    // the way the driver lays them - one tip sample per game frame joined by
-    // its spline, dropped once older than Time - and drawn by a LineRenderer
-    // carrying the same width, colour and material.
-    // Rebuilt from scratch on every call, so scrubbing backwards is as exact
-    // as playing forwards.
-    private void ApplyTrail(AnimationClip clip)
+    private static Transform FindChild(Transform root, string childName)
     {
-        BladeTrailClipDriver driver = FindTrailDriver();
-        TrailRenderer sourceRenderer = driver != null
-            ? (TrailRenderer)Field(typeof(BladeTrailClipDriver), "trail").GetValue(driver)
-            : null;
-
-        if (sourceRenderer == null && player != null)
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
         {
-            sourceRenderer = player.GetComponentInChildren<TrailRenderer>(true);
-        }
-
-        if (!showTrail || sourceRenderer == null ||
-            !TryGetTrailWindow(clip, out BladeTrailClipDriver.ClipWindow window))
-        {
-            HideTrail();
-            return;
-        }
-
-        ResolveTrailSpan(in window, clip, out float start, out float end);
-        float time = frame / ClipFrameRate;
-
-        if (time < start || time - end > sourceRenderer.time)
-        {
-            HideTrail();
-            return;
-        }
-
-        trailPoints.Clear();
-        trailPointTimes.Clear();
-
-        float recordUntil = Mathf.Min(time, end);
-        float step = 1f / trailSampleRate;
-        int steps = Mathf.CeilToInt((recordUntil - start) / step);
-        Transform tip = sourceRenderer.transform;
-
-        trailSamples.Clear();
-        trailSampleTimes.Clear();
-
-        for (int i = 0; i <= steps; i++)
-        {
-            float sampleTime = Mathf.Min(start + i * step, recordUntil);
-            SamplePose(clip, sampleTime);
-            trailSamples.Add(tip.position);
-            trailSampleTimes.Add(sampleTime);
-        }
-
-        // The driver's own layout, so the preview draws the curve play mode
-        // would: every point is laid by the driver, none by the renderer.
-        BladeTrailClipDriver.BuildTrail(
-            trailSamples,
-            driver != null ? driver.PointSpacing : 0.03f,
-            trailPoints,
-            trailOwners);
-
-        for (int i = 0; i < trailOwners.Count; i++)
-        {
-            trailPointTimes.Add(trailSampleTimes[trailOwners[i]]);
-        }
-
-        // The walk above left the body at the end of the recording.
-        SamplePose(clip, time);
-
-        // While emitting, the trail's head stays on the blade between points.
-        bool emitting = time <= end;
-        Vector3 head = tip.position;
-
-        // Not ??=: that skips Unity's null check and keeps a destroyed one.
-        if (trailLine == null)
-        {
-            trailLine = CreateTrailLine();
-        }
-
-        CopyTrailLook(sourceRenderer, trailLine);
-
-        // Newest first: a TrailRenderer's width and colour run from the
-        // emitter (0) back to the tail (1).
-        trailLinePoints.Clear();
-
-        if (emitting)
-        {
-            trailLinePoints.Add(head);
-        }
-
-        for (int i = trailPoints.Count - 1; i >= 0; i--)
-        {
-            if (time - trailPointTimes[i] > sourceRenderer.time)
+            if (child.name == childName)
             {
-                break;
-            }
-
-            trailLinePoints.Add(trailPoints[i]);
-        }
-
-        if (trailLinePoints.Count < 2)
-        {
-            HideTrail();
-            return;
-        }
-
-        trailLine.positionCount = trailLinePoints.Count;
-        trailLine.SetPositions(trailLinePoints.ToArray());
-        trailLine.enabled = true;
-    }
-
-    private void HideTrail()
-    {
-        if (trailLine != null)
-        {
-            trailLine.enabled = false;
-        }
-    }
-
-    private static LineRenderer CreateTrailLine()
-    {
-        var go = new GameObject("WeaponTrailPreview (temporary)");
-        go.hideFlags = HideFlags.HideAndDontSave;
-
-        var line = go.AddComponent<LineRenderer>();
-        line.useWorldSpace = true;
-        line.loop = false;
-        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        line.receiveShadows = false;
-        return line;
-    }
-
-    // Read every time rather than once, so edits to the TrailRenderer show up
-    // while scrubbing.
-    private static void CopyTrailLook(TrailRenderer from, LineRenderer to)
-    {
-        to.sharedMaterial = from.sharedMaterial;
-        to.widthCurve = from.widthCurve;
-        to.widthMultiplier = from.widthMultiplier;
-        to.colorGradient = from.colorGradient;
-        to.alignment = from.alignment;
-        to.textureMode = from.textureMode;
-        to.textureScale = from.textureScale;
-        to.numCornerVertices = from.numCornerVertices;
-        to.numCapVertices = from.numCapVertices;
-    }
-
-    private void DestroyTrailInstance()
-    {
-        if (trailLine == null)
-        {
-            return;
-        }
-
-        DestroyImmediate(trailLine.gameObject);
-        trailLine = null;
-    }
-
-    private bool TryGetTrailWindow(
-        AnimationClip clip,
-        out BladeTrailClipDriver.ClipWindow window)
-    {
-        window = default;
-
-        BladeTrailClipDriver driver = FindTrailDriver();
-
-        if (driver == null || clip == null)
-        {
-            return false;
-        }
-
-        var windows = (BladeTrailClipDriver.ClipWindow[])
-            Field(typeof(BladeTrailClipDriver), "windows").GetValue(driver);
-
-        if (windows == null)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < windows.Length; i++)
-        {
-            if (windows[i].clipName == clip.name)
-            {
-                window = windows[i];
-                return true;
+                return child;
             }
         }
 
-        return false;
-    }
-
-    // The window in seconds of clip time, counting its frames at the
-    // driver's rate as the driver does.
-    private static void ResolveTrailSpan(
-        in BladeTrailClipDriver.ClipWindow window,
-        AnimationClip clip,
-        out float start,
-        out float end)
-    {
-        const float rate = BladeTrailClipDriver.FrameRate;
-
-        start = window.startFrame / rate;
-        end = Mathf.Min(window.endFrame / rate, clip.length);
+        return null;
     }
 
     private static bool HasSlashPrefab(CharacterEffectSpawner spawner)

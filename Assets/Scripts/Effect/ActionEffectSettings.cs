@@ -74,6 +74,14 @@ public struct ActionEffectSettings
     // closing, the skill finishing, or a dash cutting it short.
     public bool stayInWorld;
 
+    // For effects left behind along the motion - afterimages and speed lines
+    // behind a dash. They follow the character and stop with the active window
+    // like any swing effect, but when the skill ends or is cut short what is
+    // already out is let go to fade where it is instead of being cleared. A
+    // dash ends the moment its active window does, so without this its trail
+    // would vanish the instant it was laid.
+    public bool outlivesSkill;
+
     // How much of the arc is lit at once, as a fraction of its length. The
     // crescent is drawn by a band that sweeps from the start of the cut to the
     // end, so the tail is revealed first, the head catches up, and the tail

@@ -145,11 +145,20 @@ public sealed class SlashEffect : MonoBehaviour
     public bool StaysInWorld => isPlaying && settings.stayInWorld;
 
     // The motion was cut short - a dash cancelling the recovery, a death, a
-    // disable. Unlike End() this ignores the fade and kills the effect now.
+    // disable. Unlike End() this ignores the fade and kills the effect now,
+    // unless the entry outlives the skill: then it is let go where it is and
+    // fades out as if the swing had ended.
     public void Cancel()
     {
         if (!isPlaying)
         {
+            return;
+        }
+
+        if (settings.outlivesSkill)
+        {
+            followAnchor = null;
+            End();
             return;
         }
 
