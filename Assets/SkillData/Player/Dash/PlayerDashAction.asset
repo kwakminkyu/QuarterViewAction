@@ -23,6 +23,9 @@ MonoBehaviour:
     phases: 2
     lungeDistance: 2.5
     moveSpeedMultiplier: 0
+    passThroughLayers:
+      serializedVersion: 2
+      m_Bits: 128
   effects:
   - enabled: 1
     delay: 0

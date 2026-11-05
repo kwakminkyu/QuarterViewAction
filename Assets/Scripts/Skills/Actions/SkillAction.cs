@@ -21,6 +21,11 @@ public struct SkillMovementSettings
     // Covered within each chosen phase, not split across them.
     [Min(0f)] public float lungeDistance;
     [Min(0f)] public float moveSpeedMultiplier;
+
+    // Layers the character moves through for as long as this action runs -
+    // enemies for a dash, so it never stops on a body. Anything left out,
+    // such as walls, still blocks. Nothing by default.
+    public LayerMask passThroughLayers;
 }
 
 // From which phase of a combo action the next step's input is taken. Input
@@ -114,15 +119,18 @@ public abstract class SkillAction : ScriptableObject
             return;
         }
 
-        Vector3 velocity =
-            LungeVelocity(
+        // Handed over as distance for the phase time this call covers, never
+        // as a velocity, so the pieces add up to exactly the lunge whatever
+        // the frame rate.
+        Vector3 displacement =
+            LungeDisplacement(
                 in context,
                 movementSettings.lungeDistance,
                 phaseDuration) +
             context.Movement.GetInputVelocity(
-                movementSettings.moveSpeedMultiplier);
+                movementSettings.moveSpeedMultiplier) * context.DeltaTime;
 
-        context.Movement.MoveBySkill(velocity);
+        context.Movement.AddSkillDisplacement(displacement);
     }
 
     // The ground the action's hit will cover, for warning about it ahead of
@@ -191,26 +199,24 @@ public abstract class SkillAction : ScriptableObject
             : direction.normalized;
     }
 
-    // The velocity that covers this frame's share of the phase's lunge. The
-    // share is measured in the phase's own time, which can be less than a
-    // whole frame when the phase opens or closes mid-frame.
-    private static Vector3 LungeVelocity(
+    // This call's share of the phase's lunge. The share is measured in the
+    // phase's own time, which can be less than a whole frame when the phase
+    // opens or closes mid-frame; over the phase the shares sum to distance.
+    private static Vector3 LungeDisplacement(
         in SkillActionContext context,
         float distance,
         float phaseDuration)
     {
         if (phaseDuration <= Mathf.Epsilon ||
             distance <= Mathf.Epsilon ||
-            context.DeltaTime <= Mathf.Epsilon ||
-            Time.deltaTime <= Mathf.Epsilon)
+            context.DeltaTime <= Mathf.Epsilon)
         {
             return Vector3.zero;
         }
 
         float phaseDistance =
             distance * context.DeltaTime / phaseDuration;
-        float frameSpeed = phaseDistance / Time.deltaTime;
 
-        return ResolveFlatDirection(in context) * frameSpeed;
+        return ResolveFlatDirection(in context) * phaseDistance;
     }
 }

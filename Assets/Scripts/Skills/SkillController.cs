@@ -9,6 +9,9 @@ public enum SkillPhase
     Finished
 }
 
+// Runs ahead of CharacterMovement, so the distance a skill asks for on a frame
+// is moved on that same frame rather than the next.
+[DefaultExecutionOrder(-50)]
 [RequireComponent(typeof(CharacterMovement), typeof(DamageReceiver))]
 public sealed class SkillController : MonoBehaviour
 {
@@ -176,6 +179,14 @@ public sealed class SkillController : MonoBehaviour
         FinishCurrentSkill();
     }
 
+    // Drops a combo step that was asked for but has not started yet, for an
+    // input that should win over it - a dash pressed after the attack.
+    public void ClearPendingCombo()
+    {
+        hasPendingCombo = false;
+        pendingComboTarget = null;
+    }
+
     // For states that interrupt a character and then pass, such as a
     // stagger: the running skill is cut off and no new one starts until every
     // Lock has been matched by an Unlock. Death does not use this - it
@@ -236,7 +247,22 @@ public sealed class SkillController : MonoBehaviour
         currentTarget = target;
         ChangePhase(SkillPhase.Startup);
         movement.BeginSkillControl();
+        ApplyActionPassThrough();
         RaiseActionStarted();
+    }
+
+    // Each action, combo steps included, says what its user moves through
+    // while it runs; the skill's end hands collisions back (EndSkillControl).
+    private void ApplyActionPassThrough()
+    {
+        LayerMask layers = TryGetAction(
+                currentSkill.Definition,
+                currentActionIndex,
+                out SkillAction action)
+            ? action.movementSettings.passThroughLayers
+            : (LayerMask)0;
+
+        movement.SetPassThroughLayers(layers);
     }
 
     private void UpdateCurrentExecution(float deltaTime)
@@ -459,6 +485,7 @@ public sealed class SkillController : MonoBehaviour
         currentTarget = target;
         hasPendingCombo = false;
         ChangePhase(SkillPhase.Startup);
+        ApplyActionPassThrough();
         RaiseActionStarted();
     }
 

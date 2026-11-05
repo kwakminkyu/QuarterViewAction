@@ -19,12 +19,19 @@ public sealed class PlayerInputController : MonoBehaviour
     // still attacks once the character is free.
     [SerializeField, Min(0f)] private float attackBufferDuration = 0.2f;
 
+    // The same for a dash pressed a moment before the attack reaches its
+    // recovery, or before the cooldown runs out. A dash outranks an attack:
+    // pressing it drops any attack still waiting, and while it waits no
+    // attack goes first.
+    [SerializeField, Min(0f)] private float dashBufferDuration = 0.15f;
+
     private CharacterMovement characterMovement;
     private CharacterAim characterAim;
     private SkillController skillController;
     private SkillDebugView skillDebugView;
     private Camera worldCamera;
     private float bufferedAttackTime = float.NegativeInfinity;
+    private float bufferedDashTime = float.NegativeInfinity;
 
     public Vector2 MoveInput { get; private set; }
     public Vector2 AimInput { get; private set; }
@@ -58,46 +65,41 @@ public sealed class PlayerInputController : MonoBehaviour
 
     private void PressAttack()
     {
-        // Only a fresh press: a press buffered before the dash began is not
-        // aimed at the dash and still waits for the basic attack.
-        if (IsDashing() &&
-            TryUseSkill(
-                DashAttackSlot,
-                "Dash attack",
-                characterAim.AimDirection))
-        {
-            bufferedAttackTime = float.NegativeInfinity;
-            return;
-        }
+        // A dash still waiting goes first; the attack waits behind it, kept
+        // even mid-combo, so dash-then-attack comes out as the dash attack.
+        bool dashWaiting = IsDashBuffered();
 
-        if (TryUseAttack())
+        if (!dashWaiting && TryUseAttack())
         {
             bufferedAttackTime = float.NegativeInfinity;
         }
-        else if (ShouldBufferAttack())
+        else if (dashWaiting || ShouldBufferAttack())
         {
             bufferedAttackTime = Time.time;
         }
     }
 
-    // Along the held direction; with none, where the character faces - after
-    // stopping that is the way it was going, so a standing dash never flips
-    // round toward the cursor.
     public void OnDash(InputAction.CallbackContext context)
     {
-        Vector3 direction = GetCameraRelativeMoveDirection(MoveInput);
-
-        if (direction.sqrMagnitude <= Mathf.Epsilon)
+        if (!context.performed)
         {
-            direction = transform.forward;
-            direction.y = 0f;
+            return;
         }
 
-        TryUseSkill(
-            context,
-            DashSlot,
-            "Dash",
-            direction);
+        // The dash outranks every attack asked for before it: one waiting in
+        // the buffer, and a combo step held for the recovery, which would
+        // otherwise start first and shut the dash out again.
+        bufferedAttackTime = float.NegativeInfinity;
+        skillController.ClearPendingCombo();
+
+        if (TryUseDash())
+        {
+            bufferedDashTime = float.NegativeInfinity;
+        }
+        else
+        {
+            bufferedDashTime = Time.time;
+        }
     }
 
     private void Update()
@@ -111,16 +113,63 @@ public sealed class PlayerInputController : MonoBehaviour
             : moveDirection;
         characterAim.FaceDirection(facingDirection);
 
+        // Dash first, so on a frame where both could start the dash wins.
+        UpdateBufferedDash();
         UpdateBufferedAttack();
     }
 
+    // While dashing an attack becomes the dash attack. Any attack press alive
+    // during a dash came after the dash was pressed - pressing the dash drops
+    // the older ones - so it is aimed at the dash, buffered or not.
     private bool TryUseAttack(bool reportRefusal = true)
     {
+        if (IsDashing() &&
+            TryUseSkill(
+                DashAttackSlot,
+                "Dash attack",
+                characterAim.AimDirection,
+                reportRefusal))
+        {
+            return true;
+        }
+
         return TryUseSkill(
             BasicAttackSlot,
             "Basic attack",
             characterAim.AimDirection,
             reportRefusal);
+    }
+
+    // Aimed when it actually starts, not when it was pressed, so a buffered
+    // dash follows the direction held at that moment.
+    private bool TryUseDash(bool reportRefusal = true)
+    {
+        return TryUseSkill(
+            DashSlot,
+            "Dash",
+            GetDashDirection(),
+            reportRefusal);
+    }
+
+    // Along the held direction; with none, where the character faces - after
+    // stopping that is the way it was going, so a standing dash never flips
+    // round toward the cursor.
+    private Vector3 GetDashDirection()
+    {
+        Vector3 direction = GetCameraRelativeMoveDirection(MoveInput);
+
+        if (direction.sqrMagnitude <= Mathf.Epsilon)
+        {
+            direction = transform.forward;
+            direction.y = 0f;
+        }
+
+        return direction;
+    }
+
+    private bool IsDashBuffered()
+    {
+        return Time.time - bufferedDashTime <= dashBufferDuration;
     }
 
     private bool IsDashing()
@@ -150,9 +199,34 @@ public sealed class PlayerInputController : MonoBehaviour
         return !isAttackCombo || !hasNextStep;
     }
 
+    private void UpdateBufferedDash()
+    {
+        if (!IsDashBuffered())
+        {
+            return;
+        }
+
+        if (!TryUseDash(reportRefusal: false))
+        {
+            return;
+        }
+
+        // An attack pressed while this dash waited is replayed as late after
+        // the dash starts as it was pressed after the dash, rather than on
+        // this same frame, which would cut the dash off before it moved.
+        // Pressing the dash dropped every older attack, so one still in the
+        // buffer always came after it.
+        float delay = Time.time - bufferedDashTime;
+        bufferedAttackTime += delay;
+        bufferedDashTime = float.NegativeInfinity;
+    }
+
     private void UpdateBufferedAttack()
     {
-        if (Time.time - bufferedAttackTime > attackBufferDuration)
+        // Not before its (replayed) press time, and not after the buffer.
+        if (Time.time < bufferedAttackTime ||
+            Time.time - bufferedAttackTime > attackBufferDuration ||
+            IsDashBuffered())
         {
             return;
         }
@@ -176,20 +250,6 @@ public sealed class PlayerInputController : MonoBehaviour
             Vector3.up).normalized;
 
         return cameraRight * input.x + cameraForward * input.y;
-    }
-
-    private bool TryUseSkill(
-        InputAction.CallbackContext context,
-        int slotIndex,
-        string skillName,
-        Vector3 direction)
-    {
-        if (!context.performed)
-        {
-            return false;
-        }
-
-        return TryUseSkill(slotIndex, skillName, direction);
     }
 
     // A buffered retry runs every frame, so it reports only the press that
