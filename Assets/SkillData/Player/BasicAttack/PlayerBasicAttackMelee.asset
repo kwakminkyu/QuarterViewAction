@@ -15,7 +15,8 @@ MonoBehaviour:
   skillId: player.basic_attack.melee
   cooldown: 0
   canStartDuringRecovery: 0
+  interrupts: []
   actions:
   - {fileID: 11400000, guid: 9d2b1fdc47a3473cac25ad8401c439dd, type: 2}
-  - {fileID: 11400000, guid: f29de4d051e54b2dad79bb344eac78d5, type: 2}
+  - {fileID: 11400000, guid: 3160acb956665564f8f497132a174ac1, type: 2}
   - {fileID: 11400000, guid: b51e46735da047f0bc45a889fd561867, type: 2}
