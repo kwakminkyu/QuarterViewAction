@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-public sealed class MonsterAIController : MonoBehaviour
+public sealed class EnemyAIController : MonoBehaviour
 {
     private enum AIState
     {
@@ -16,7 +16,7 @@ public sealed class MonsterAIController : MonoBehaviour
 
     private NavMeshAgent agent;
     private CharacterMovement characterMovement;
-    private MonsterSkillSelector skillSelector;
+    private EnemySkillSelector skillSelector;
     private SkillController skillController;
     private CharacterAim characterAim;
     private Health health;
@@ -26,7 +26,7 @@ public sealed class MonsterAIController : MonoBehaviour
     private bool engaged;
 
     // Chases the target from anywhere, not only once it comes within aggro
-    // range - for monsters spawned into a fight already going on.
+    // range - for enemies spawned into a fight already going on.
     public void Engage()
     {
         engaged = true;
@@ -36,7 +36,7 @@ public sealed class MonsterAIController : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         characterMovement = GetComponent<CharacterMovement>();
-        skillSelector = GetComponent<MonsterSkillSelector>();
+        skillSelector = GetComponent<EnemySkillSelector>();
         skillController = GetComponent<SkillController>();
         health = GetComponent<Health>();
 

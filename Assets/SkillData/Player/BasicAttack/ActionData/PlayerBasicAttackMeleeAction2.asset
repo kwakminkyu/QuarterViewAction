@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: PlayerBasicAttackMeleeAction2
   m_EditorClassIdentifier: Assembly-CSharp::OverlapSkillAction
   startupDuration: 0.16666667
-  activeDuration: 0.13333334
+  activeDuration: 0.1
   recoveryDuration: 0.2
   recoveryCancelDelay: 0.1
-  comboInputWindow: 1
+  comboInputWindow: 0
   animationState: BasicCombo2
   animationStartupTime: 0
   movementSettings:
@@ -33,7 +33,7 @@ MonoBehaviour:
     prefab: {fileID: 0}
     material: {fileID: 0}
     color: {r: 4, g: 2, b: 1.1, a: 1}
-    duration: 0.23666665
+    duration: 0.20333332
     fadeOutDuration: 0.12
     offset: {x: 0, y: 0, z: 0}
     scale: {x: 1, y: 1, z: 1}
@@ -63,7 +63,7 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.49295774
+        time: 0.40983608
         value: 1
         inSlope: 0
         outSlope: 0
@@ -89,17 +89,17 @@ MonoBehaviour:
       - serializedVersion: 3
         time: 0
         value: 0
-        inSlope: 1.352381
-        outSlope: 1.352381
+        inSlope: 1.6266667
+        outSlope: 1.6266667
         tangentMode: 0
         weightedMode: 0
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.49295774
+        time: 0.40983608
         value: 0.6666667
-        inSlope: 1.352381
-        outSlope: 1.352381
+        inSlope: 1.6266667
+        outSlope: 1.412037
         tangentMode: 0
         weightedMode: 0
         inWeight: 0

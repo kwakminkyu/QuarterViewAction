@@ -5,7 +5,7 @@ using UnityEngine;
 // describe what to play and this component places and plays it. The instances
 // themselves come from, live under and go back to the scene's shared
 // EffectPool; this only keeps track of the ones it started, so the skill can
-// end or cancel them. Monsters get the same behaviour by adding it.
+// end or cancel them. Enemies get the same behaviour by adding it.
 public sealed class CharacterEffectSpawner : MonoBehaviour
 {
     [SerializeField] private SlashEffect slashPrefab;

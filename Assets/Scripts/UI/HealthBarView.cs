@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Shows a Health as a bar: the fill's right edge is anchored at the current
-// fraction of the maximum. Works the same above a monster's head (in a
+// fraction of the maximum. Works the same above an enemy's head (in a
 // world-space canvas) and in the screen HUD.
 //
 // The fill is sized by its anchors rather than by an Image's fill amount, so

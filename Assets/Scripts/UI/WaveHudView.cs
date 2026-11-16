@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Shows which wave is on and how many of its monsters are left, and flashes
+// Shows which wave is on and how many of its enemies are left, and flashes
 // the wave number across the screen as each wave starts.
 public sealed class WaveHudView : MonoBehaviour
 {

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-// The waves of one run, in order. A wave is cleared once every monster in it
+// The waves of one run, in order. A wave is cleared once every enemy in it
 // is dead; the run is cleared with the last wave.
 [CreateAssetMenu(menuName = "Waves/Wave Set", fileName = "WaveSet")]
 public sealed class WaveSet : ScriptableObject
@@ -19,7 +19,7 @@ public sealed class WaveSet : ScriptableObject
         // Spawned group by group, in the order listed.
         public Group[] groups = Array.Empty<Group>();
 
-        public int MonsterCount
+        public int EnemyCount
         {
             get
             {
@@ -42,7 +42,7 @@ public sealed class WaveSet : ScriptableObject
     [Min(0f)] public float firstWaveDelay = 1.5f;
     [Tooltip("From a wave being cleared to the next one starting.")]
     [Min(0f)] public float timeBetweenWaves = 3f;
-    [Tooltip("Between two monsters of the same wave appearing.")]
+    [Tooltip("Between two enemies of the same wave appearing.")]
     [Min(0f)] public float spawnInterval = 0.5f;
 
     public Wave[] waves = Array.Empty<Wave>();

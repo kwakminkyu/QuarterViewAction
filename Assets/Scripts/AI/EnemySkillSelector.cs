@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 [RequireComponent(typeof(SkillController))]
-public sealed class MonsterSkillSelector : MonoBehaviour
+public sealed class EnemySkillSelector : MonoBehaviour
 {
     [Serializable]
     private sealed class WeightedSkill

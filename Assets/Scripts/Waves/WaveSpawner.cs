@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-// Runs a WaveSet: spawns each wave's monsters at the spawn points, waits for
+// Runs a WaveSet: spawns each wave's enemies at the spawn points, waits for
 // all of them to die, then moves on to the next wave. Stops spawning once the
 // player is dead.
 public sealed class WaveSpawner : MonoBehaviour
@@ -18,14 +18,14 @@ public sealed class WaveSpawner : MonoBehaviour
 
     private Transform player;
     private Health playerHealth;
-    // Time each spawn point was last used, so monsters of one wave spread
+    // Time each spawn point was last used, so enemies of one wave spread
     // over the points instead of piling up on the same one.
     private float[] lastUsedTimes = Array.Empty<float>();
 
     // 0-based. -1 before the first wave starts.
     public int CurrentWaveIndex { get; private set; } = -1;
     public int WaveCount => waveSet != null ? waveSet.waves.Length : 0;
-    // Monsters of the current wave not yet killed, including those still to spawn.
+    // Enemies of the current wave not yet killed, including those still to spawn.
     public int RemainingCount { get; private set; }
     public bool IsCleared { get; private set; }
 
@@ -101,7 +101,7 @@ public sealed class WaveSpawner : MonoBehaviour
         WaveSet.Wave wave = waveSet.waves[waveIndex];
 
         CurrentWaveIndex = waveIndex;
-        RemainingCount = wave.MonsterCount;
+        RemainingCount = wave.EnemyCount;
         WaveStarted?.Invoke(waveIndex);
         RemainingChanged?.Invoke(RemainingCount);
 
@@ -152,9 +152,9 @@ public sealed class WaveSpawner : MonoBehaviour
 
         lastUsedTimes[pointIndex] = Time.time;
 
-        GameObject monster = Instantiate(prefab, hit.position, FacePlayer(hit.position), transform);
+        GameObject enemy = Instantiate(prefab, hit.position, FacePlayer(hit.position), transform);
 
-        if (!monster.TryGetComponent(out Health health))
+        if (!enemy.TryGetComponent(out Health health))
         {
             Debug.LogWarning($"{prefab.name} has no Health; it can't be counted.", this);
             return false;
@@ -163,7 +163,7 @@ public sealed class WaveSpawner : MonoBehaviour
         health.Depleted += DecreaseRemaining;
 
         // Spawned outside its aggro range, it would otherwise just stand there.
-        if (monster.TryGetComponent(out MonsterAIController ai))
+        if (enemy.TryGetComponent(out EnemyAIController ai))
         {
             ai.Engage();
         }

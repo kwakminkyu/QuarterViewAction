@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Plays a character's motion from what its gameplay components report, so the
-// same component drives the player and any monster. Sits on the model next to
+// same component drives the player and any enemy. Sits on the model next to
 // the Animator; the gameplay components live on a parent.
 //
 // Each skill action names its own animator state (SkillAction.animationState),

@@ -621,7 +621,7 @@ GameObject:
   - component: {fileID: 7465197654401167588}
   - component: {fileID: 76964746264536603}
   m_Layer: 7
-  m_Name: MonsterBase
+  m_Name: EnemyBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -758,7 +758,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 11443073a32c4dcdaa15163a364a9f9b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MonsterSkillSelector
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySkillSelector
   skills:
   - slotIndex: 0
     weight: 1
@@ -775,7 +775,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d30f8211a969e14d85354a9aa658f14, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MonsterAIController
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAIController
   aggroRange: 10
   attackRange: 3
   attackRangeExitMultiplier: 1.15

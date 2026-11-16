@@ -8,7 +8,7 @@ public sealed class DamageReceiver : MonoBehaviour, IDamageable
 
     [Tooltip("Seconds this can't be hit again after taking a hit. The " +
         "player's grace against being worn down by several attackers at " +
-        "once; left at zero on monsters so every hit of a combo lands.")]
+        "once; left at zero on enemies so every hit of a combo lands.")]
     [SerializeField, Min(0f)] private float invulnerableAfterHit;
 
     // Two separate sources, so neither can end the other's: a skill that

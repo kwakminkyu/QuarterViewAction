@@ -4,16 +4,16 @@ using UnityEngine;
 using UnityEngine.AI;
 
 // Takes a character out of play when its health runs out, the same way for
-// the player and for monsters: whatever steers it is switched off, its
-// colliders stop blocking and being hit, and the body falls over. Monsters
+// the player and for enemies: whatever steers it is switched off, its
+// colliders stop blocking and being hit, and the body falls over. Enemies
 // then sink into the floor and are removed; the player stays down.
 //
 // The fall is done by moving the body, not by an animation, so a character
-// without a Death motion (every monster today) still reads as dead.
+// without a Death motion (every enemy today) still reads as dead.
 [RequireComponent(typeof(Health))]
 public sealed class CharacterDeath : MonoBehaviour
 {
-    [Tooltip("Whatever drives this character - player input, monster AI. " +
+    [Tooltip("Whatever drives this character - player input, enemy AI. " +
         "Switched off at death so nothing keeps steering the body.")]
     [SerializeField] private Behaviour[] disableOnDeath =
         Array.Empty<Behaviour>();

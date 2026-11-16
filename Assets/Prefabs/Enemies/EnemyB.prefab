@@ -70,7 +70,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 46c3f99ae6ddd444d97f2fa11308310a, type: 2}
     - target: {fileID: 5544708251322393906, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: m_Name
-      value: MonsterB
+      value: EnemyB
       objectReference: {fileID: 0}
     - target: {fileID: 6327888687309881577, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: maxHealth
