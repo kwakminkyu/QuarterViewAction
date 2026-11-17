@@ -47,7 +47,8 @@ using UnityEngine;
 // needs no offset, swing plane or rotation of its own.
 public static class SlashTrajectoryBaker
 {
-    public const string Folder = "Assets/Models/Effect/Trajectory";
+    public const string Folder = "Assets/Art/Effect/Trajectory";
+    public const string MeshPrefix = "Mesh_Slash_";
 
     // The rate the attacks are animated at, which frames are counted in. Clips
     // are exported at a multiple of it, so their own frame numbers are larger.
@@ -132,7 +133,7 @@ public static class SlashTrajectoryBaker
 
     public static string MeshPath(AnimationClip clip)
     {
-        return Folder + "/Slash_" + clip.name + ".asset";
+        return Folder + "/" + MeshPrefix + clip.name + ".asset";
     }
 
     // Poses the character at the clip's samples within [start, end] (clip
@@ -329,7 +330,7 @@ public static class SlashTrajectoryBaker
         }
 
         mesh.Clear();
-        mesh.name = "Slash_" + clip.name;
+        mesh.name = MeshPrefix + clip.name;
         mesh.vertices = vertices;
         mesh.uv = uv;
         mesh.triangles = triangles;
@@ -340,7 +341,7 @@ public static class SlashTrajectoryBaker
         {
             if (!AssetDatabase.IsValidFolder(Folder))
             {
-                AssetDatabase.CreateFolder("Assets/Models/Effect", "Trajectory");
+                AssetDatabase.CreateFolder("Assets/Art/Effect", "Trajectory");
             }
 
             AssetDatabase.CreateAsset(mesh, path);
