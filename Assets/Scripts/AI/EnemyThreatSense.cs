@@ -32,7 +32,7 @@ public sealed class EnemyThreatSense : MonoBehaviour
     [SerializeField, Min(0f)] private float attackMargin = 0.4f;
 
     [Header("Dash at me")]
-    [SerializeField, Min(0f)] private float dashPressure = 0.8f;
+    [SerializeField, Min(0f)] private float dashPressure = 1f;
     [SerializeField, Range(0f, 90f)] private float dashAngle = 35f;
     [Tooltip("Added to the dash distance.")]
     [SerializeField, Min(0f)] private float dashMargin = 1f;
@@ -41,19 +41,20 @@ public sealed class EnemyThreatSense : MonoBehaviour
     [SerializeField, Min(0f)] private float approachRange = 2.5f;
     [Tooltip("Speed toward this enemy, in metres per second, above which the " +
         "player counts as closing in.")]
-    [SerializeField, Min(0f)] private float approachSpeed = 3f;
+    [SerializeField, Min(0f)] private float approachSpeed = 2.5f;
     [SerializeField, Min(0f)] private float approachPerSecond = 2.5f;
 
     [Header("Proximity")]
-    [Tooltip("Keep it inside the distance this enemy attacks from, or its own " +
-        "approach would count as being crowded.")]
-    [SerializeField, Min(0f)] private float proximityRange = 0.9f;
+    [Tooltip("Covers the distance this enemy trades blows from, so a fight " +
+        "at close quarters builds up to a reaction.")]
+    [SerializeField, Min(0f)] private float proximityRange = 1.5f;
     [SerializeField, Min(0f)] private float proximityPerSecond = 1.5f;
 
     [Header("Memory")]
     [Tooltip("Drains every signal; the per-second rises above must beat it " +
-        "for a steady push to build up.")]
-    [SerializeField, Min(0f)] private float decayPerSecond = 0.5f;
+        "for a steady push to build up. Slow keeps a fight's pressure from " +
+        "being forgotten across a short step away.")]
+    [SerializeField, Min(0f)] private float decayPerSecond = 0.1f;
     [SerializeField, Min(0f)] private float maxPressure = 2f;
 
     private readonly float[] pressure = new float[SignalCount];
@@ -145,9 +146,9 @@ public sealed class EnemyThreatSense : MonoBehaviour
         float distance = toMe.magnitude;
         Vector3 playerPosition = player.position;
 
-        // Its own moves put it next to the player too - a lunge ending
-        // beside them - and that is not the player pressing.
-        bool ownMove = ownSkills != null && ownSkills.IsExecuting;
+        // Its own lunges carry it at the player too, and that is not the
+        // player pressing; standing its ground in a swing still counts.
+        bool ownMove = IsOwnSkillMoving();
 
         // Measured from the player's own motion, not the distance between
         // the two, so this enemy chasing the player never counts as being
@@ -227,6 +228,35 @@ public sealed class EnemyThreatSense : MonoBehaviour
         {
             Add(ThreatSignal.Attack, attackPressure);
         }
+    }
+
+    private bool IsOwnSkillMoving()
+    {
+        if (ownSkills == null || !ownSkills.IsExecuting)
+        {
+            return false;
+        }
+
+        SkillDefinition definition = ownSkills.CurrentSkillDefinition;
+        SkillAction action = definition != null
+            ? definition.GetAction(ownSkills.CurrentActionIndex)
+            : null;
+
+        if (action == null)
+        {
+            return false;
+        }
+
+        SkillMovementPhases phase = ownSkills.CurrentPhase switch
+        {
+            SkillPhase.Startup => SkillMovementPhases.Startup,
+            SkillPhase.Active => SkillMovementPhases.Active,
+            SkillPhase.Recovery => SkillMovementPhases.Recovery,
+            _ => SkillMovementPhases.None,
+        };
+
+        return (action.movementSettings.phases & phase) != 0 &&
+            Mathf.Abs(action.movementSettings.lungeDistance) > Mathf.Epsilon;
     }
 
     private void Add(ThreatSignal signal, float amount)

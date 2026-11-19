@@ -134,17 +134,23 @@ public sealed class EnemySkillSelector : MonoBehaviour
         return false;
     }
 
-    // An attack to go in for, chosen by weight. With inRangeOnly, only those
-    // usable from the current distance. -1 when there is none.
-    public int PickAttack(float distance, float fallbackRange, bool inRangeOnly)
+    // An attack to go in for, chosen by weight. -1 when there is none.
+    public int PickAttack(float distance, float fallbackRange)
     {
-        return PickWeighted(true, distance, fallbackRange, inRangeOnly);
+        return PickWeighted(true, distance, fallbackRange, RangeFilter.Any);
+    }
+
+    // An attack that closing in on the target can still bring into range:
+    // none whose minimum distance is already passed. -1 when there is none.
+    public int PickCloserAttack(float distance, float fallbackRange)
+    {
+        return PickWeighted(true, distance, fallbackRange, RangeFilter.NotTooClose);
     }
 
     // A move that needs no token, usable from here, fired straight away.
     public bool TryUseFreeSkill(Transform target, float distance, float fallbackRange)
     {
-        int slot = PickWeighted(false, distance, fallbackRange, true);
+        int slot = PickWeighted(false, distance, fallbackRange, RangeFilter.InRange);
         return slot >= 0 && Use(slot, target);
     }
 
@@ -191,17 +197,24 @@ public sealed class EnemySkillSelector : MonoBehaviour
         return accepted;
     }
 
+    private enum RangeFilter
+    {
+        Any,
+        InRange,
+        NotTooClose
+    }
+
     private int PickWeighted(
         bool attacks,
         float distance,
         float fallbackRange,
-        bool inRangeOnly)
+        RangeFilter filter)
     {
         float totalWeight = 0f;
 
         for (int i = 0; i < skills.Length; i++)
         {
-            totalWeight += CandidateWeight(skills[i], attacks, distance, fallbackRange, inRangeOnly);
+            totalWeight += CandidateWeight(skills[i], attacks, distance, fallbackRange, filter);
         }
 
         if (totalWeight <= Mathf.Epsilon)
@@ -214,7 +227,7 @@ public sealed class EnemySkillSelector : MonoBehaviour
 
         for (int i = 0; i < skills.Length; i++)
         {
-            float weight = CandidateWeight(skills[i], attacks, distance, fallbackRange, inRangeOnly);
+            float weight = CandidateWeight(skills[i], attacks, distance, fallbackRange, filter);
 
             if (weight <= 0f)
             {
@@ -238,15 +251,19 @@ public sealed class EnemySkillSelector : MonoBehaviour
         bool attacks,
         float distance,
         float fallbackRange,
-        bool inRangeOnly)
+        RangeFilter filter)
     {
         if (skill == null || skill.needsToken != attacks)
         {
             return 0f;
         }
 
-        if (inRangeOnly &&
-            (distance < skill.minRange || distance > MaxRange(skill, fallbackRange)))
+        if (filter != RangeFilter.Any && distance < skill.minRange)
+        {
+            return 0f;
+        }
+
+        if (filter == RangeFilter.InRange && distance > MaxRange(skill, fallbackRange))
         {
             return 0f;
         }

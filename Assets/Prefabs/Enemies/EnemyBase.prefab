@@ -885,15 +885,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyThreatSense
   attackPressure: 1
   attackMargin: 0.4
-  dashPressure: 0.8
+  dashPressure: 1
   dashAngle: 35
   dashMargin: 1
   approachRange: 2.5
-  approachSpeed: 3
+  approachSpeed: 2.5
   approachPerSecond: 2.5
-  proximityRange: 0.9
+  proximityRange: 1.5
   proximityPerSecond: 1.5
-  decayPerSecond: 0.5
+  decayPerSecond: 0.1
   maxPressure: 2
 --- !u!114 &2328457228697985243
 MonoBehaviour:

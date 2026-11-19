@@ -185,7 +185,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: reactions.Array.data[0].chance
-      value: 0.6
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: reactions.Array.data[0].maxRange
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: skills.Array.data[1].slotIndex
@@ -197,7 +201,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: reactions.Array.data[0].signals
-      value: 14
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: skills.Array.data[1].needsToken

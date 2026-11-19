@@ -1912,7 +1912,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAttackDirector
   maxTokens: 2
-  regrantDelay: 0.3
   waitWeight: 1
   distanceWeight: 0.3
 --- !u!4 &1524674177

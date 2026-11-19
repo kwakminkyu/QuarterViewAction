@@ -86,13 +86,36 @@ public sealed class EnemyAIController : MonoBehaviour
 
     private void OnEnable()
     {
-        skillController.SkillEnded += OnSkillEnded;
+        skillController.PhaseChanged += OnPhaseChanged;
+        skillController.SkillEnded += OnAttackOver;
     }
 
     private void OnDisable()
     {
-        skillController.SkillEnded -= OnSkillEnded;
+        skillController.PhaseChanged -= OnPhaseChanged;
+        skillController.SkillEnded -= OnAttackOver;
+        attackInFlight = false;
         LeaveEngage();
+    }
+
+    // The token goes back once the hit is out: the next enemy's wind-up can
+    // overlap this one's recovery, but never its active frames.
+    private void OnPhaseChanged(SkillPhase phase)
+    {
+        if (phase == SkillPhase.Recovery)
+        {
+            OnAttackOver();
+        }
+    }
+
+    // Also on the skill ending, for an attack cut short before its recovery.
+    private void OnAttackOver()
+    {
+        if (attackInFlight)
+        {
+            attackInFlight = false;
+            ReleaseToken();
+        }
     }
 
     private void Start()
@@ -315,8 +338,16 @@ public sealed class EnemyAIController : MonoBehaviour
 
         if (plannedSlot < 0 || !skillSelector.IsReady(plannedSlot))
         {
-            plannedSlot = skillSelector.PickAttack(distance, attackRange, false);
+            plannedSlot = skillSelector.PickAttack(distance, attackRange);
             approachTime = 0f;
+        }
+
+        // Too close for the one it went in for: switch to one that closing
+        // in can still bring into range - between two attacks' ranges it
+        // just keeps pressing in until the shorter one reaches.
+        if (plannedSlot >= 0 && skillSelector.IsTooClose(plannedSlot, distance))
+        {
+            plannedSlot = skillSelector.PickCloserAttack(distance, attackRange);
         }
 
         if (plannedSlot < 0)
@@ -330,27 +361,14 @@ public sealed class EnemyAIController : MonoBehaviour
         {
             StopMoving();
 
+            // Held until the hit is out (OnPhaseChanged), so no more than
+            // the token count are ever mid-swing at once.
             if (skillSelector.Use(plannedSlot, target))
             {
                 attackInFlight = true;
             }
 
             plannedSlot = -1;
-            return;
-        }
-
-        // Too close for the one it went in for: anything usable from here,
-        // or give the turn up.
-        if (skillSelector.IsTooClose(plannedSlot, distance))
-        {
-            plannedSlot = skillSelector.PickAttack(distance, attackRange, true);
-
-            if (plannedSlot < 0)
-            {
-                ReleaseToken();
-                TickWaiting();
-            }
-
             return;
         }
 
@@ -469,16 +487,6 @@ public sealed class EnemyAIController : MonoBehaviour
         if (director != null)
         {
             director.Release(this);
-        }
-    }
-
-    private void OnSkillEnded()
-    {
-        // The attack the token was for is over, however it ended.
-        if (attackInFlight)
-        {
-            attackInFlight = false;
-            ReleaseToken();
         }
     }
 

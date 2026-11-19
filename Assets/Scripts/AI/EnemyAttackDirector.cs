@@ -3,14 +3,12 @@ using UnityEngine;
 
 // Hands out attack tokens so only a few enemies go for the player at a time;
 // the rest wait their turn around it. An enemy holds its token from setting off
-// toward the player until the attack it went in for has ended.
+// toward the player until the attack it went in for reaches its recovery; a
+// reaction that cuts in hands it back as it starts.
 // Optional: with none in the scene every enemy attacks whenever it likes.
 public sealed class EnemyAttackDirector : MonoBehaviour
 {
     [SerializeField, Min(1)] private int maxTokens = 2;
-    [Tooltip("After a token comes back, how long before it can go out again, " +
-        "so one enemy finishing doesn't hand straight over to the next swing.")]
-    [SerializeField, Min(0f)] private float regrantDelay = 0.3f;
     [Tooltip("Priority gained per second spent waiting for a token.")]
     [SerializeField, Min(0f)] private float waitWeight = 1f;
     [Tooltip("Priority lost per metre from the player.")]
@@ -18,7 +16,6 @@ public sealed class EnemyAttackDirector : MonoBehaviour
 
     private readonly List<EnemyAIController> holders = new();
     private readonly List<EnemyAIController> wanting = new();
-    private float nextGrantTime;
 
     public static EnemyAttackDirector Instance { get; private set; }
 
@@ -55,19 +52,14 @@ public sealed class EnemyAttackDirector : MonoBehaviour
 
     public void Release(EnemyAIController enemy)
     {
-        if (holders.Remove(enemy))
-        {
-            nextGrantTime = Time.time + regrantDelay;
-        }
+        holders.Remove(enemy);
     }
 
     private void LateUpdate()
     {
         holders.RemoveAll(h => h == null || !h.isActiveAndEnabled);
 
-        while (holders.Count < maxTokens &&
-            wanting.Count > 0 &&
-            Time.time >= nextGrantTime)
+        while (holders.Count < maxTokens && wanting.Count > 0)
         {
             int best = 0;
             float bestScore = float.NegativeInfinity;
