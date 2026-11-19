@@ -32,11 +32,11 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Rogue_Attack1
+      name: Rogue_Slash
       takeName: Scene
       internalID: -623603649343465320
       firstFrame: 4
-      lastFrame: 72
+      lastFrame: 48
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

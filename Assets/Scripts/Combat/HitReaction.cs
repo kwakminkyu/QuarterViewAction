@@ -48,6 +48,9 @@ public sealed class HitReaction : MonoBehaviour
     private Material[][] overlaidMaterials;
     private bool isOverlaid;
 
+    // The flash showing now: the hit's own, or one asked for through Flash.
+    private Color activeFlashColor;
+    private float activeFlashDuration;
     private float flashTimer;
     private float squashTimer;
     private Vector3 knockbackVelocity;
@@ -115,8 +118,21 @@ public sealed class HitReaction : MonoBehaviour
         transform.localScale = restScale;
     }
 
+    // A flash with its own colour and length on the same body, such as an
+    // attack about to come out. Shares the hit flash's slot, so whichever
+    // came last shows.
+    public void Flash(Color color, float duration)
+    {
+        activeFlashColor = color;
+        activeFlashDuration = duration;
+        flashTimer = duration;
+        ApplyFlash(duration > 0f ? 1f : 0f);
+    }
+
     private void OnDamageReceived(DamageInfo info)
     {
+        activeFlashColor = flashColor;
+        activeFlashDuration = flashDuration;
         flashTimer = flashDuration;
         squashTimer = squashDuration;
 
@@ -142,7 +158,7 @@ public sealed class HitReaction : MonoBehaviour
         if (flashTimer > 0f)
         {
             flashTimer = Mathf.Max(flashTimer - deltaTime, 0f);
-            ApplyFlash(flashDuration > 0f ? flashTimer / flashDuration : 0f);
+            ApplyFlash(activeFlashDuration > 0f ? flashTimer / activeFlashDuration : 0f);
         }
 
         if (squashTimer > 0f)
@@ -178,7 +194,7 @@ public sealed class HitReaction : MonoBehaviour
         for (int i = 0; i < renderers.Length; i++)
         {
             renderers[i].GetPropertyBlock(propertyBlock);
-            propertyBlock.SetColor(BaseColorId, Color.Lerp(baseColors[i], flashColor, amount));
+            propertyBlock.SetColor(BaseColorId, Color.Lerp(baseColors[i], activeFlashColor, amount));
             renderers[i].SetPropertyBlock(propertyBlock);
         }
     }
@@ -204,7 +220,7 @@ public sealed class HitReaction : MonoBehaviour
             return;
         }
 
-        Color color = flashColor;
+        Color color = activeFlashColor;
         color.a *= amount;
 
         for (int i = 0; i < overlayRenderers.Length; i++)

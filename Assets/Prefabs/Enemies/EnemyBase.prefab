@@ -620,6 +620,8 @@ GameObject:
   - component: {fileID: 3094605951676875052}
   - component: {fileID: 7465197654401167588}
   - component: {fileID: 76964746264536603}
+  - component: {fileID: 7798147123957907063}
+  - component: {fileID: 2328457228697985243}
   m_Layer: 7
   m_Name: EnemyBase
   m_TagString: Untagged
@@ -718,6 +720,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
   health: {fileID: 6327888687309881577}
+  invulnerableAfterHit: 0
 --- !u!114 &4374469529613809003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -762,6 +765,10 @@ MonoBehaviour:
   skills:
   - slotIndex: 0
     weight: 1
+    minRange: 0
+    maxRange: 0
+    needsToken: 1
+  reactions: []
   recentSkillWeightMultiplier: 0.4
   comboInputSafetyTime: 0.01
 --- !u!114 &7494644518448289734
@@ -779,6 +786,11 @@ MonoBehaviour:
   aggroRange: 10
   attackRange: 3
   attackRangeExitMultiplier: 1.15
+  waitRadius: 3.5
+  waitRadiusJitter: 0.5
+  repositionInterval: 2.5
+  arriveDistance: 0.3
+  approachTimeout: 3
 --- !u!114 &5284878853811968565
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -793,6 +805,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HitReaction
   flashColor: {r: 1, g: 1, b: 1, a: 1}
   flashDuration: 0.12
+  flashOverlay: {fileID: 0}
   squashAmount: 0.15
   squashDuration: 0.15
   knockbackDeceleration: 20
@@ -858,6 +871,44 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe810b8aafb28c143a5a70ea9ba05f7c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AttackTelegraph
+--- !u!114 &7798147123957907063
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5544708251322393906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f585b68dcbb39714fbd7c738e1761f6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyThreatSense
+  attackPressure: 1
+  attackMargin: 0.4
+  dashPressure: 0.8
+  dashAngle: 35
+  dashMargin: 1
+  approachRange: 2.5
+  approachSpeed: 3
+  approachPerSecond: 2.5
+  proximityRange: 0.9
+  proximityPerSecond: 1.5
+  decayPerSecond: 0.5
+  maxPressure: 2
+--- !u!114 &2328457228697985243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5544708251322393906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e91e6608b4e3d5148b8a50848ef14c81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AttackWindupFlash
+  color: {r: 1, g: 0.25, b: 0.15, a: 0.85}
+  duration: 0.15
 --- !u!1 &6359854230872797729
 GameObject:
   m_ObjectHideFlags: 0

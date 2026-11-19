@@ -19,13 +19,21 @@ MonoBehaviour:
   - groups:
     - prefab: {fileID: 6215971660151989435, guid: fa09571c2f19f0745920750a01146053, type: 3}
       count: 2
+      startWhenAliveAtMost: -1
+    maxAlive: 0
   - groups:
     - prefab: {fileID: 6215971660151989435, guid: fa09571c2f19f0745920750a01146053, type: 3}
       count: 2
+      startWhenAliveAtMost: -1
     - prefab: {fileID: 8704203978815063782, guid: 7983cca438b974f468bfcf3f6b2c4758, type: 3}
       count: 1
+      startWhenAliveAtMost: -1
+    maxAlive: 0
   - groups:
     - prefab: {fileID: 6215971660151989435, guid: fa09571c2f19f0745920750a01146053, type: 3}
       count: 2
+      startWhenAliveAtMost: -1
     - prefab: {fileID: 8704203978815063782, guid: 7983cca438b974f468bfcf3f6b2c4758, type: 3}
       count: 2
+      startWhenAliveAtMost: -1
+    maxAlive: 0

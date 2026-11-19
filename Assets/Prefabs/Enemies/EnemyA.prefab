@@ -117,12 +117,20 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3643754911190066321, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: equippedSkills.Array.size
-      value: 1
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3643754911190066321, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: 'equippedSkills.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: 9da23e6bee8ca4a4eb4048f539056f23, type: 2}
+      objectReference: {fileID: 11400000, guid: 04f2fd5075440d34d9f03a1b2a9a6163, type: 2}
+    - target: {fileID: 3643754911190066321, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: 'equippedSkills.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 82576e98428cbd946a8dd7a9193c9b3d, type: 2}
+    - target: {fileID: 3643754911190066321, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: 'equippedSkills.Array.data[2]'
+      value: 
+      objectReference: {fileID: 11400000, guid: e626db5d92eb86c42bb3be1bed2fe0c1, type: 2}
     - target: {fileID: 4374469529613809003, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: moveSpeed
       value: 4
@@ -146,6 +154,66 @@ PrefabInstance:
     - target: {fileID: 6327888687309881577, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: maxHealth
       value: 80
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: skills.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: reactions.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: skills.Array.data[1].weight
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: skills.Array.data[2].weight
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: skills.Array.data[0].maxRange
+      value: 1.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: skills.Array.data[1].maxRange
+      value: 2.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: skills.Array.data[1].minRange
+      value: 1.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: reactions.Array.data[0].chance
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: skills.Array.data[1].slotIndex
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: skills.Array.data[2].slotIndex
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: reactions.Array.data[0].signals
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: skills.Array.data[1].needsToken
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: reactions.Array.data[0].cooldown
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: reactions.Array.data[0].slotIndex
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6869998047612766655, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
+      propertyPath: reactions.Array.data[0].threshold
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7494644518448289734, guid: c80208b7f62d34c4599c7f6d60282aa4, type: 3}
       propertyPath: attackRange

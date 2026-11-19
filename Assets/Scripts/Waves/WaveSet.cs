@@ -11,6 +11,10 @@ public sealed class WaveSet : ScriptableObject
     {
         public GameObject prefab;
         [Min(1)] public int count = 1;
+        [Tooltip("Holds this group back until at most this many enemies of " +
+            "the wave are alive, so it comes in as the one before thins " +
+            "out. -1 starts it straight after the group before.")]
+        [Min(-1)] public int startWhenAliveAtMost = -1;
     }
 
     [Serializable]
@@ -18,6 +22,9 @@ public sealed class WaveSet : ScriptableObject
     {
         // Spawned group by group, in the order listed.
         public Group[] groups = Array.Empty<Group>();
+        [Tooltip("Most enemies of this wave alive at once; the rest wait and " +
+            "come in as others die. 0 = no limit.")]
+        [Min(0)] public int maxAlive = 0;
 
         public int EnemyCount
         {

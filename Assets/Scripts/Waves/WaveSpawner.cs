@@ -27,6 +27,8 @@ public sealed class WaveSpawner : MonoBehaviour
     public int WaveCount => waveSet != null ? waveSet.waves.Length : 0;
     // Enemies of the current wave not yet killed, including those still to spawn.
     public int RemainingCount { get; private set; }
+    // Enemies of the current wave spawned and still alive.
+    public int AliveCount { get; private set; }
     public bool IsCleared { get; private set; }
 
     public event Action<int> WaveStarted;
@@ -102,6 +104,7 @@ public sealed class WaveSpawner : MonoBehaviour
 
         CurrentWaveIndex = waveIndex;
         RemainingCount = wave.EnemyCount;
+        AliveCount = 0;
         WaveStarted?.Invoke(waveIndex);
         RemainingChanged?.Invoke(RemainingCount);
 
@@ -116,6 +119,14 @@ public sealed class WaveSpawner : MonoBehaviour
                 continue;
             }
 
+            if (group.startWhenAliveAtMost >= 0)
+            {
+                while (AliveCount > group.startWhenAliveAtMost)
+                {
+                    yield return null;
+                }
+            }
+
             for (int n = 0; n < group.count; n++)
             {
                 if (!first && waveSet.spawnInterval > 0f)
@@ -124,6 +135,11 @@ public sealed class WaveSpawner : MonoBehaviour
                 }
 
                 first = false;
+
+                while (wave.maxAlive > 0 && AliveCount >= wave.maxAlive)
+                {
+                    yield return null;
+                }
 
                 if (!Spawn(group.prefab))
                 {
@@ -161,6 +177,8 @@ public sealed class WaveSpawner : MonoBehaviour
         }
 
         health.Depleted += DecreaseRemaining;
+        health.Depleted += DecreaseAlive;
+        AliveCount++;
 
         // Spawned outside its aggro range, it would otherwise just stand there.
         if (enemy.TryGetComponent(out EnemyAIController ai))
@@ -169,6 +187,11 @@ public sealed class WaveSpawner : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void DecreaseAlive()
+    {
+        AliveCount = Mathf.Max(AliveCount - 1, 0);
     }
 
     private void DecreaseRemaining()

@@ -18,8 +18,9 @@ public struct SkillMovementSettings
 {
     public SkillMovementPhases phases;
 
-    // Covered within each chosen phase, not split across them.
-    [Min(0f)] public float lungeDistance;
+    // Covered within each chosen phase, not split across them. Negative
+    // carries the character backward, away from the attack direction.
+    public float lungeDistance;
     [Min(0f)] public float moveSpeedMultiplier;
 
     // Layers the character moves through for as long as this action runs -
@@ -144,10 +145,11 @@ public abstract class SkillAction : ScriptableObject
     }
 
     // How far the action carries its user forward while its hit is out, so a
-    // warning can cover where a lunging hit will land.
+    // warning can cover where a lunging hit will land. A backward move
+    // never stretches the warning.
     public float ActiveLungeDistance =>
         (movementSettings.phases & SkillMovementPhases.Active) != 0
-            ? movementSettings.lungeDistance
+            ? Mathf.Max(0f, movementSettings.lungeDistance)
             : 0f;
 
     public virtual void OnActiveEnter(in SkillActionContext context)
@@ -208,7 +210,7 @@ public abstract class SkillAction : ScriptableObject
         float phaseDuration)
     {
         if (phaseDuration <= Mathf.Epsilon ||
-            distance <= Mathf.Epsilon ||
+            Mathf.Abs(distance) <= Mathf.Epsilon ||
             context.DeltaTime <= Mathf.Epsilon)
         {
             return Vector3.zero;
